@@ -652,3 +652,216 @@ feat: define chat api contract
 - feature 的主题是 chat API contract
 
 好的 commit message 会让后续查历史、写简历、做项目复盘都更轻松。
+
+## 2026-06-04：Day 3 提交电商 demo 数据和通用 document loader
+
+### 本次 Git 目标
+
+Day 3 已完成并通过测试，本次 Git 操作的目标是：
+
+1. 查看 Day 3 新增了哪些文件
+2. 把电商 mock 数据、policy 文档、Document schema、document loader、ecommerce adapter、测试和 Day 3 学习笔记加入暂存区
+3. 创建 Day 3 commit
+4. 推送到 GitHub
+5. 确认本地 `main` 和远程 `origin/main` 同步
+
+### 1. 查看当前工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+本次看到：
+
+```text
+?? .learnings/day3_document_loader_learning_notes.md
+?? app/domains/
+?? app/pipeline/
+?? app/schemas/document.py
+?? data/
+?? tests/test_document_loader.py
+```
+
+这里全部都是 `??`，表示这些都是 Git 还没有追踪的新文件或新目录。
+
+学习点：
+
+`??` 不是错误，它只是提醒你：这些文件还没有进入 Git 历史。如果要提交它们，需要先执行 `git add`。
+
+### 2. 查看最近提交历史
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 5
+```
+
+本次看到：
+
+```text
+b2d1762 (HEAD -> main, origin/main, origin/HEAD) feat: define chat api contract
+147e1cf chore: initialize rag copilot fastapi skeleton
+```
+
+这说明：
+
+- 当前本地分支是 `main`
+- 远程 `origin/main` 和本地 `main` 都在 Day 2 commit 上
+- Day 3 还没有提交
+
+### 3. 为什么 `git diff --stat` 没有输出
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+本次没有输出。
+
+这容易让初学者误以为“没有改动”，但其实不是。
+
+原因是：`git diff` 默认只显示已经被 Git 追踪过的文件变化。Day 3 的主要内容都是新文件，还处于 untracked 状态，所以 `git diff --stat` 不会显示它们。
+
+学习点：
+
+如果想看未追踪文件，要用：
+
+```powershell
+git status --short
+```
+
+如果想看已经暂存、准备提交的文件，要用：
+
+```powershell
+git diff --cached --name-only
+```
+
+### 4. 暂存 Day 3 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把当前所有未被 `.gitignore` 排除的 Day 3 文件加入暂存区。
+
+本次应被暂存的内容包括：
+
+- `data/ecommerce/mock/orders.json`
+- `data/ecommerce/mock/products.json`
+- `data/ecommerce/docs/faq.md`
+- `data/ecommerce/docs/return_policy.md`
+- `data/ecommerce/docs/logistics_policy.md`
+- `data/ecommerce/docs/warranty_policy.md`
+- `app/schemas/document.py`
+- `app/pipeline/document_loader.py`
+- `app/domains/ecommerce/adapter.py`
+- `tests/test_document_loader.py`
+- `.learnings/day3_document_loader_learning_notes.md`
+- `.learnings/git_learning_notes.md`
+
+### 5. 提交前检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：列出即将进入 commit 的文件。
+
+学习点：
+
+这是 `git commit` 前非常值得养成的习惯。尤其是本项目有 `.venv/`、pytest cache、学习笔记和源码混在一起时，提交前点名可以避免误提交。
+
+### 6. 创建 Day 3 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: add ecommerce documents and loader"
+```
+
+这条命令会把暂存区内容保存成新的 Git 历史版本。
+
+commit message 的含义：
+
+- `feat`：新增功能
+- `add ecommerce documents and loader`：这次新增了电商 demo 文档和文档加载器
+
+为什么用 `feat`？
+
+因为 Day 3 新增了项目能力：数据文件、统一 Document schema、通用 document loader 和 ecommerce adapter。它不是单纯的文档更新。
+
+### 7. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把 Day 3 commit 推送到 GitHub。
+
+因为 Day 1 已经建立了本地 `main` 和远程 `origin/main` 的 tracking 关系，所以这里不用写完整的：
+
+```powershell
+git push origin main
+```
+
+直接 `git push` 就可以。
+
+### 8. 推送后检查
+
+执行命令：
+
+```powershell
+git status --short
+git log --oneline --decorate -n 5
+```
+
+作用：
+
+- 确认没有未提交内容
+- 确认最新 commit 同时出现在 `HEAD -> main` 和 `origin/main`
+
+如果 `git status --short` 没有输出，表示工作区干净。
+
+### 本次 Git 学习点
+
+### `git status` 比 `git diff` 更适合看全局状态
+
+Day 3 主要是新增文件，所以 `git diff --stat` 没输出。
+
+这说明：
+
+- `git diff` 适合看已追踪文件的修改
+- `git status` 适合看整体状态，包括未追踪文件
+
+### 新目录不会自动进入 Git
+
+Git 不会“自动追踪目录”。它只追踪文件。
+
+所以新建了：
+
+```text
+data/
+app/pipeline/
+app/domains/
+```
+
+这些目录下有文件后，执行 `git add .` 才会把里面的文件加入 Git。
+
+### 每天一个主题 commit 更清晰
+
+Day 1 commit 是 FastAPI 骨架。
+
+Day 2 commit 是 `/chat` API 契约。
+
+Day 3 commit 是数据和 loader。
+
+这种节奏比把多天内容堆成一个大 commit 更容易 review，也更适合你之后复盘项目成长路径。

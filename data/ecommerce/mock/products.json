@@ -1,0 +1,42 @@
+[
+  {
+    "product_id": "P-HEADPHONE-01",
+    "name": "Aurora Noise-Canceling Headphones",
+    "category": "audio",
+    "price": 499.0,
+    "warranty_months": 12,
+    "returnable": true
+  },
+  {
+    "product_id": "P-KEYBOARD-01",
+    "name": "Compact Mechanical Keyboard",
+    "category": "computer_accessory",
+    "price": 329.0,
+    "warranty_months": 12,
+    "returnable": true
+  },
+  {
+    "product_id": "P-ROUTER-01",
+    "name": "Home Mesh Router",
+    "category": "networking",
+    "price": 699.0,
+    "warranty_months": 24,
+    "returnable": true
+  },
+  {
+    "product_id": "P-MOUSE-01",
+    "name": "Wireless Ergonomic Mouse",
+    "category": "computer_accessory",
+    "price": 159.0,
+    "warranty_months": 12,
+    "returnable": true
+  },
+  {
+    "product_id": "P-MONITOR-01",
+    "name": "27-inch Office Monitor",
+    "category": "display",
+    "price": 1199.0,
+    "warranty_months": 36,
+    "returnable": false
+  }
+]
