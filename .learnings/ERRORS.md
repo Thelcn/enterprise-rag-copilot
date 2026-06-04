@@ -32,6 +32,42 @@ Running `.venv\Scripts\python.exe -m ensurepip --upgrade --default-pip` reproduc
 
 ---
 
+## [ERR-20260604-004] powershell_curl_json_quoting
+
+**Logged**: 2026-06-04T16:25:00+08:00
+**Priority**: low
+**Status**: handled
+**Area**: tests
+
+### Summary
+A manual `curl.exe` verification for `POST /chat` sent invalid JSON because the PowerShell command used fragile escaping.
+
+### Error
+```text
+{"detail":[{"type":"json_invalid","loc":["body",1],"msg":"JSON decode error","input":{},"ctx":{"error":"Expecting property name enclosed in double quotes"}}]}
+```
+
+### Context
+- Command attempted: `curl.exe -s -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/json" -d "...escaped JSON..."`
+- Endpoint: `POST /chat`
+- The API was running, but the JSON body received by FastAPI was malformed.
+
+### Suggested Fix
+Use PowerShell single quotes around the JSON body for `curl.exe`, for example:
+
+```powershell
+curl.exe -s -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/json" -d '{"user_id":"u1","session_id":"s1","query":"退货政策是什么？"}'
+```
+
+### Resolution
+Reran the manual verification with PowerShell single quotes around the JSON body. The valid `/chat` request returned the expected mock `ChatResponse`, and the blank query request returned HTTP `422`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: tests/test_chat_contract.py
+
+---
+
 ## [ERR-20260604-003] git_add_index_lock_permission
 
 **Logged**: 2026-06-04T16:07:00+08:00

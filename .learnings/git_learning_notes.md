@@ -1,0 +1,654 @@
+# Git 学习笔记
+
+这个文档用来记录本项目中实际执行过的 Git 操作。它不是单纯的命令清单，而是为了帮助你理解：
+
+- 我用了什么 Git 命令
+- 每个命令的作用是什么
+- 为什么要这样做
+- 遇到了什么问题
+- 问题是怎么解决的
+- 之后你自己做项目时可以怎么复用
+
+之后每次我完成 `git add`、`git commit`、`git push` 或处理 Git 异常后，都会自动更新这个文档。
+
+## 2026-06-04：Day 1 初始化仓库、首次提交并推送到 GitHub
+
+### 本次 Git 目标
+
+Day 1 代码已经完成并通过 review，所以这次 Git 操作的目标是：
+
+1. 把当前项目目录变成 Git 仓库
+2. 排除不应该提交的本地文件
+3. 提交 Day 1 的 FastAPI 工程骨架
+4. 连接到 GitHub 远程仓库
+5. 推送到 GitHub 的 `main` 分支
+
+远程仓库地址：
+
+```text
+git@github.com:Thelcn/enterprise-rag-copilot.git
+```
+
+### 1. 查看当前目录是否已经是 Git 仓库
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+结果：
+
+```text
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+这说明当前目录还不是 Git 仓库。
+
+通俗理解：Git 还没有开始“管理”这个文件夹，所以它不知道哪些文件新增了、哪些文件修改了、哪些文件要提交。
+
+### 2. 新增 `.gitignore`
+
+在初始化和提交前，我先创建了 `.gitignore`。
+
+`.gitignore` 的作用是告诉 Git：哪些文件或目录不要追踪、不要提交。
+
+本项目主要忽略了：
+
+```text
+__pycache__/
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+.venv/
+.env
+```
+
+这些内容为什么不能提交？
+
+- `.venv/` 是本机 Python 虚拟环境，体积大，而且和别人的电脑不一定兼容
+- `__pycache__/` 是 Python 运行后生成的缓存文件，不是源码
+- `.pytest_cache/` 和 `pytest-cache-files-*/` 是 pytest 运行后的缓存
+- `.env` 可能包含本地配置或密钥，不应该上传
+
+但是 `.env.example` 可以提交，因为它只是模板，不包含秘密信息。
+
+### 3. 初始化 Git 仓库
+
+执行命令：
+
+```powershell
+git init
+```
+
+作用：在当前目录下创建 `.git/`，让 Git 开始管理这个项目。
+
+第一次执行时遇到了问题：
+
+```text
+warning: unable to unlink 'G:/港城莞/Agent_study/enterprise-rag-copilot/.git/config.lock': Invalid argument
+error: could not write config file G:/港城莞/Agent_study/enterprise-rag-copilot/.git/config: Permission denied
+fatal: could not set 'core.repositoryformatversion' to '0'
+```
+
+问题原因：
+
+Git 初始化过程中需要写 `.git/config`，但当时出现了 `.git/config.lock` 锁文件和权限问题，导致初始化没有完成。
+
+解决方式：
+
+```powershell
+if (Test-Path -LiteralPath '.git\config.lock') {
+    Remove-Item -LiteralPath '.git\config.lock' -Force -ErrorAction Stop
+}
+git init
+```
+
+这段命令做了两件事：
+
+1. 如果 `.git/config.lock` 存在，就删除它
+2. 重新执行 `git init`
+
+第二次执行成功：
+
+```text
+Initialized empty Git repository in G:/港城莞/Agent_study/enterprise-rag-copilot/.git/
+```
+
+学习点：
+
+Git 的 `.lock` 文件通常表示“某个 Git 操作正在进行”。如果 Git 操作异常中断，锁文件可能残留，后续 Git 操作就会失败。确认没有其他 Git 操作正在运行后，可以删除残留 lock 文件。
+
+### 4. 检查 Git 用户信息
+
+执行命令：
+
+```powershell
+git config user.name
+git config user.email
+```
+
+结果：
+
+```text
+TimeLapse
+80013972+Thelcn@users.noreply.github.com
+```
+
+作用：确认 Git commit 会使用哪个用户名和邮箱。
+
+学习点：
+
+每个 commit 都会记录作者信息。如果这里没有配置，`git commit` 可能会失败，或者使用你不想要的身份信息。
+
+### 5. 查看将要提交的文件
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+当时看到的文件包括：
+
+```text
+?? .env.example
+?? .gitignore
+?? .learnings/
+?? Dockerfile
+?? README.md
+?? app/
+?? rag_copilot_week1_execution_plan.pdf
+?? requirements.txt
+?? tests/
+```
+
+`??` 的意思是：这些文件是 untracked，也就是 Git 还没有追踪过的新文件。
+
+这一步很重要，因为提交前要确认没有把 `.venv/`、`__pycache__/`、pytest 缓存等不该提交的内容放进去。
+
+### 6. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把当前目录下应该被 Git 追踪的变更加入 staging area。
+
+通俗理解：
+
+- 工作区：你正在编辑的文件
+- 暂存区：准备进入下一次 commit 的文件
+- commit：真正保存成一个 Git 历史版本
+
+`git add .` 的意思是：把当前目录下所有没有被 `.gitignore` 排除的新增/修改文件放入暂存区。
+
+第一次执行时遇到问题：
+
+```text
+fatal: Unable to create 'G:/港城莞/Agent_study/enterprise-rag-copilot/.git/index.lock': Permission denied
+```
+
+问题原因：
+
+Git 需要写 `.git/index` 来记录暂存区状态，但 `.git/index.lock` 创建失败，仍然是 Windows 文件权限或锁文件相关问题。
+
+解决方式：
+
+使用提升权限重新执行：
+
+```powershell
+git add .
+```
+
+之后暂存成功。
+
+同时 Git 提示了一批换行符 warning：
+
+```text
+LF will be replaced by CRLF the next time Git touches it
+```
+
+这不是错误。
+
+它的意思是：当前文件使用 Unix 风格换行 `LF`，但 Windows 上 Git 可能会在工作区转换成 `CRLF`。这不会影响代码功能。
+
+### 7. 确认暂存区内容
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：只看已经进入暂存区、准备被 commit 的文件名。
+
+当时确认进入暂存区的文件有：
+
+```text
+.env.example
+.gitignore
+.learnings/ERRORS.md
+.learnings/day1_fastapi_skeleton_learning_notes.md
+Dockerfile
+README.md
+app/api/routes.py
+app/core/config.py
+app/main.py
+rag_copilot_week1_execution_plan.pdf
+requirements.txt
+tests/test_health.py
+```
+
+这一步的意义：
+
+提交前最后确认“我要提交什么”。尤其是新项目第一次提交，很容易误把虚拟环境、缓存、临时文件提交进去。
+
+### 8. 创建第一次 commit
+
+执行命令：
+
+```powershell
+git commit -m "chore: initialize rag copilot fastapi skeleton"
+```
+
+作用：把暂存区里的内容保存成一个 Git 历史版本。
+
+提交成功：
+
+```text
+[master (root-commit) 147e1cf] chore: initialize rag copilot fastapi skeleton
+ 12 files changed, 732 insertions(+)
+```
+
+这里有几个关键词：
+
+- `master`：当时本地默认分支名
+- `root-commit`：这个仓库的第一个 commit
+- `147e1cf`：commit 的短 hash，可以理解为这次提交的 ID
+- `12 files changed`：本次提交涉及 12 个文件
+
+commit message 为什么这样写？
+
+```text
+chore: initialize rag copilot fastapi skeleton
+```
+
+- `chore` 表示工程初始化、配置、杂项建设
+- `initialize rag copilot fastapi skeleton` 表示这次做的是 RAG Copilot 的 FastAPI 骨架初始化
+
+好的 commit message 应该说明“做了什么”，最好还能暗示“为什么”。
+
+### 9. 把本地分支改名为 `main`
+
+执行命令：
+
+```powershell
+git branch -M main
+```
+
+作用：把当前分支强制重命名为 `main`。
+
+为什么要这样做？
+
+很多 GitHub 新仓库默认主分支叫 `main`。而本地 `git init` 后有时默认分支是 `master`。为了和 GitHub 保持一致，所以改成 `main`。
+
+### 10. 添加 GitHub 远程仓库
+
+执行命令：
+
+```powershell
+git remote add origin git@github.com:Thelcn/enterprise-rag-copilot.git
+```
+
+作用：给当前本地仓库添加一个名为 `origin` 的远程仓库。
+
+通俗理解：
+
+- 本地仓库：你电脑上的 Git 仓库
+- 远程仓库：GitHub 上的仓库
+- `origin`：远程仓库的常用默认名字
+
+之后执行 `git push origin main` 时，Git 就知道要把 `main` 分支推到哪个 GitHub 仓库。
+
+### 11. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push -u origin main
+```
+
+作用：把本地 `main` 分支推送到 GitHub 的 `origin/main`。
+
+成功结果：
+
+```text
+branch 'main' set up to track 'origin/main'.
+To github.com:Thelcn/enterprise-rag-copilot.git
+ * [new branch]      main -> main
+```
+
+这里的 `-u` 是 `--set-upstream` 的简写。
+
+它的作用是建立本地 `main` 和远程 `origin/main` 的追踪关系。
+
+之后你在这个分支上可以更简单地使用：
+
+```powershell
+git push
+git pull
+```
+
+而不一定每次都写完整的 `git push origin main`。
+
+### 12. 最后检查状态
+
+执行命令：
+
+```powershell
+git status --short
+git log --oneline --decorate -n 3
+git remote -v
+```
+
+作用：
+
+- `git status --short`：确认工作区是否干净
+- `git log --oneline --decorate -n 3`：查看最近 3 个 commit
+- `git remote -v`：确认远程仓库地址
+
+最终状态：
+
+```text
+147e1cf (HEAD -> main, origin/main) chore: initialize rag copilot fastapi skeleton
+```
+
+说明：
+
+- `HEAD -> main`：当前本地分支是 `main`
+- `origin/main`：远程 GitHub 上的 `main` 分支也在这个 commit
+- 本地和远程已经同步
+
+## 本次 Git 操作的关键学习点
+
+### `git status` 是最常用的安全检查
+
+在执行 `add`、`commit`、`push` 前后都应该经常看：
+
+```powershell
+git status --short
+```
+
+它能帮你确认：
+
+- 哪些文件未追踪
+- 哪些文件已修改
+- 哪些文件已暂存
+- 当前是否还有未提交内容
+
+### `.gitignore` 应该尽早创建
+
+如果先 `git add .`，再发现 `.venv/` 或缓存被加进去了，就需要额外清理。
+
+新项目中最好先写 `.gitignore`，再 `git add .`。
+
+### `git add` 不是提交
+
+`git add` 只是把文件放进暂存区。
+
+真正生成历史版本的是：
+
+```powershell
+git commit -m "message"
+```
+
+### `git push` 是把本地 commit 上传到 GitHub
+
+本地 commit 只存在你的电脑上。
+
+只有 push 后，GitHub 仓库才会看到这些提交。
+
+### 处理 `.lock` 文件要谨慎
+
+这次遇到了：
+
+- `.git/config.lock`
+- `.git/index.lock`
+
+它们一般表示 Git 正在执行某个操作。
+
+只有在确认没有其他 Git 命令正在运行时，才可以删除残留 lock 文件。不要随便删除 `.git/` 里的其他文件。
+
+## 之后我会怎么维护这个文档
+
+之后每次完成 Git 操作后，我会在这里追加一节，至少记录：
+
+- 日期和任务名
+- 执行的 Git 命令
+- 每条命令的作用
+- commit message
+- 是否 push
+- 遇到的问题和解决方式
+- 你需要理解的 Git 学习点
+
+这样这个文件会逐渐变成你自己的项目 Git 实战笔记。
+
+## 2026-06-04：Day 2 提交 `/chat` API 契约
+
+### 本次 Git 目标
+
+Day 2 已经完成并通过测试，本次 Git 操作的目标是：
+
+1. 查看当前工作区有哪些改动
+2. 把 Day 2 的 schema、mock `/chat`、API 契约文档、测试和学习笔记放入暂存区
+3. 创建一个 Day 2 commit
+4. 推送到 GitHub 的 `main` 分支
+5. 确认本地和远程同步
+
+这次会把之前新增但尚未提交的 `git_learning_notes.md` 一起纳入提交。这样 Git 学习记录本身也会被保存在仓库历史里。
+
+### 1. 查看当前工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：快速查看当前有哪些文件被修改、新增、删除。
+
+本次看到的状态包括：
+
+```text
+ M .learnings/ERRORS.md
+ M app/api/routes.py
+?? .learnings/day2_chat_contract_learning_notes.md
+?? .learnings/git_learning_notes.md
+?? app/schemas/
+?? docs/
+?? tests/test_chat_contract.py
+```
+
+这里的含义：
+
+- `M` 表示 modified，也就是已经被 Git 追踪过，现在发生了修改
+- `??` 表示 untracked，也就是新文件或新目录，Git 还没有追踪
+
+学习点：
+
+提交前一定要先看 `git status --short`。这一步可以避免把不该提交的文件误加进去。
+
+### 2. 查看最近提交历史
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 5
+```
+
+作用：查看最近 5 条 commit，并显示分支和远程指针位置。
+
+本次看到：
+
+```text
+147e1cf (HEAD -> main, origin/main, origin/HEAD) chore: initialize rag copilot fastapi skeleton
+```
+
+说明当前本地 `main` 和远程 `origin/main` 都停在 Day 1 commit 上。Day 2 还没有提交。
+
+### 3. 暂存 Day 2 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把当前目录下所有未被 `.gitignore` 排除的改动加入暂存区。
+
+通俗理解：
+
+`git add .` 不是提交，它只是告诉 Git：“这些改动我准备放进下一次 commit。”
+
+本次应进入暂存区的主要内容：
+
+- `app/schemas/evidence.py`
+- `app/schemas/trace.py`
+- `app/schemas/chat.py`
+- `app/api/routes.py`
+- `docs/contracts/query_api.md`
+- `tests/test_chat_contract.py`
+- `.learnings/day2_chat_contract_learning_notes.md`
+- `.learnings/git_learning_notes.md`
+- `.learnings/ERRORS.md`
+
+注意：`.venv/`、`__pycache__/`、pytest cache 不会被提交，因为 `.gitignore` 已经排除了它们。
+
+### 4. 确认暂存区内容
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：只列出已经进入暂存区、即将被 commit 的文件。
+
+学习点：
+
+这个命令适合在 `git add .` 之后、`git commit` 之前使用。它相当于提交前的“最后点名”。
+
+### 5. 创建 Day 2 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: define chat api contract"
+```
+
+作用：把暂存区的改动保存成一个新的 Git 历史版本。
+
+这次 commit message 的含义：
+
+- `feat` 表示新增功能
+- `define chat api contract` 表示这次新增的是 `/chat` API 契约
+
+为什么这里用 `feat`？
+
+因为 Day 2 不只是文档或配置调整，而是新增了用户可访问的 `POST /chat` API 结构。
+
+### 6. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把本地 Day 2 commit 上传到 GitHub。
+
+因为 Day 1 已经执行过：
+
+```powershell
+git push -u origin main
+```
+
+本地 `main` 已经和远程 `origin/main` 建立了 tracking 关系，所以这次可以直接使用更短的：
+
+```powershell
+git push
+```
+
+学习点：
+
+第一次推送某个分支时常用：
+
+```powershell
+git push -u origin main
+```
+
+之后在同一个分支上继续推送，通常可以直接：
+
+```powershell
+git push
+```
+
+### 7. 推送后检查状态
+
+执行命令：
+
+```powershell
+git status --short
+git log --oneline --decorate -n 5
+```
+
+作用：
+
+- 确认工作区是否干净
+- 确认 `HEAD -> main` 和 `origin/main` 是否指向最新 commit
+
+如果 `git status --short` 没有输出，说明当前没有未提交内容。
+
+如果 `git log` 里最新一行同时显示：
+
+```text
+HEAD -> main, origin/main
+```
+
+说明本地和 GitHub 已经同步到同一个 commit。
+
+### 本次 Git 学习点
+
+### 为什么要先更新 Git 学习文档再 commit
+
+你希望每次 Git 提交后都维护这个学习文档。为了避免出现“提交完再改文档，然后文档又变成未提交”的循环，本项目采用这个做法：
+
+1. 提交前先把本次 Git 操作会使用的命令和学习点写进文档
+2. 把代码、测试、项目学习笔记、Git 学习笔记一起提交
+3. 提交和推送后的最终 commit hash 与结果在对话中向你汇报
+
+这样既能让 Git 学习文档进入仓库历史，又不会制造一个永远多出来的未提交文档修改。
+
+### `git add .` 前一定先看 `.gitignore`
+
+如果 `.gitignore` 没有配置好，`git add .` 可能会把 `.venv/`、缓存文件、临时文件一起加入暂存区。
+
+本项目 Day 1 已经补了 `.gitignore`，所以 Day 2 可以安全使用 `git add .`。
+
+### commit message 要能说明这次变化的主题
+
+这次使用：
+
+```text
+feat: define chat api contract
+```
+
+它比 “update files” 更好，因为它告诉 reviewer：
+
+- 这次是一个 feature
+- feature 的主题是 chat API contract
+
+好的 commit message 会让后续查历史、写简历、做项目复盘都更轻松。
