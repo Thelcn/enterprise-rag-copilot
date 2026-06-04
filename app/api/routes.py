@@ -1,8 +1,11 @@
+from functools import lru_cache
+
 from fastapi import APIRouter
 
 from app.core.config import get_settings
+from app.domains.ecommerce.adapter import load_ecommerce_documents
+from app.pipeline.rag_pipeline import RagPipeline
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.trace import new_trace_id
 
 
 router = APIRouter()
@@ -21,14 +24,15 @@ def health_check() -> dict[str, str]:
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    return ChatResponse(
-        answer=(
-            "This is a Day 2 mock response. The /chat API contract is ready, "
-            "but retrieval and evidence-grounded generation are not connected yet."
-        ),
-        intent="mock_intent",
-        evidence=[],
-        fallback=True,
-        fallback_reason="Day 2 mock mode: retrieval is not connected yet.",
-        trace_id=new_trace_id(),
+    pipeline = get_chat_pipeline()
+    return pipeline.run_chat(
+        query=request.query,
+        user_id=request.user_id,
+        session_id=request.session_id,
     )
+
+
+@lru_cache
+def get_chat_pipeline() -> RagPipeline:
+    documents = load_ecommerce_documents()
+    return RagPipeline.from_documents(documents, chunk_size=220, overlap=20)

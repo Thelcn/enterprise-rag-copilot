@@ -1029,3 +1029,167 @@ git diff --cached --name-only
 - 当前有哪些改动？
 - 已追踪文件改了多少？
 - 即将提交哪些文件？
+
+## 2026-06-04：Day 5 提交 naive RAG pipeline
+
+### 本次 Git 目标
+
+Day 5 已完成并通过测试，本次 Git 操作的目标是：
+
+1. 提交 `prompt_builder.py`、`answer_generator.py`、`rag_pipeline.py`。
+2. 提交 `/chat` 从 mock 接到 RAG pipeline 的路由修改。
+3. 提交 Day 5 的 RAG pipeline 测试、failure cases 文档和学习笔记。
+4. 推送到 GitHub。
+5. 推送后继续进入 Day 6。
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+本次看到：
+
+```text
+ M app/api/routes.py
+ M docs/contracts/query_api.md
+ M tests/test_chat_contract.py
+?? .learnings/day5_naive_rag_pipeline_learning_notes.md
+?? app/pipeline/answer_generator.py
+?? app/pipeline/prompt_builder.py
+?? app/pipeline/rag_pipeline.py
+?? docs/failure_cases.md
+?? tests/test_rag_pipeline.py
+```
+
+含义：
+
+- `M` 表示已有文件被修改。
+- `??` 表示新文件还没有被 Git 追踪。
+
+这次既有已有文件修改，也有新文件。提交前需要同时看 `git status --short` 和 `git diff --stat`。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 6
+```
+
+本次最新提交是：
+
+```text
+b719401 (HEAD -> main, origin/main, origin/HEAD) feat: add chunking and keyword retrieval fallback
+```
+
+说明本地和远程都停在 Day 4，Day 5 还未提交。
+
+### 3. 查看已追踪文件变化统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+本次看到：
+
+```text
+app/api/routes.py           | 26 +++++++++++++++-----------
+docs/contracts/query_api.md | 44 ++++++++++++++++++++++++++++----------------
+tests/test_chat_contract.py |  9 ++++-----
+```
+
+这说明 Day 5 修改了 3 个已追踪文件。
+
+但注意：新文件不会出现在这个统计里，所以仍然要看 `git status --short`。
+
+### 4. 暂存 Day 5 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把 Day 5 的所有候选实现、文档、测试和学习笔记放入暂存区。
+
+本次应进入暂存区的主要文件：
+
+- `app/pipeline/prompt_builder.py`
+- `app/pipeline/answer_generator.py`
+- `app/pipeline/rag_pipeline.py`
+- `app/api/routes.py`
+- `docs/contracts/query_api.md`
+- `docs/failure_cases.md`
+- `tests/test_chat_contract.py`
+- `tests/test_rag_pipeline.py`
+- `.learnings/day5_naive_rag_pipeline_learning_notes.md`
+- `.learnings/git_learning_notes.md`
+
+### 5. 提交前检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：确认下一次 commit 会包含哪些文件。
+
+Day 5 涉及 API 行为变化，所以提交前点名很重要：要确认测试和契约文档也一起进入 commit，避免代码已经改成 RAG pipeline，但文档还停留在 mock 时代。
+
+### 6. 创建 Day 5 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: connect chat endpoint to naive rag pipeline"
+```
+
+commit message 含义：
+
+- `feat`：新增功能。
+- `connect chat endpoint to naive rag pipeline`：把 `/chat` 接入 naive RAG pipeline。
+
+为什么写 `naive rag pipeline`？
+
+因为 Day 5 仍然是 Week 1 v0：keyword fallback、rule-based answer generator，不是真实 LLM + production retrieval。
+
+### 7. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把 Day 5 commit 上传到 GitHub。
+
+### 本次 Git 学习点
+
+### 行为变化要连同测试和文档一起提交
+
+Day 5 把 `/chat` 从 mock 改成 RAG pipeline。如果只提交代码，不提交测试和契约文档，reviewer 会不知道接口行为已经改变。
+
+所以这类 commit 应该包含：
+
+- 代码实现
+- 测试更新
+- 契约文档更新
+- failure cases 或风险说明
+
+### commit message 要说明用户可见的变化
+
+这次不是简单 “add files”，而是 `/chat` endpoint 的行为发生变化。
+
+所以 commit message 直接写：
+
+```text
+connect chat endpoint to naive rag pipeline
+```
+
+这样以后看 git log，就能清楚知道哪一天 `/chat` 真正接入了 RAG v0。

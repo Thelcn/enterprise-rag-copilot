@@ -6,7 +6,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_chat_returns_stable_mock_contract() -> None:
+def test_chat_returns_stable_contract() -> None:
     response = client.post(
         "/chat",
         json={
@@ -28,10 +28,9 @@ def test_chat_returns_stable_mock_contract() -> None:
         "trace_id",
     }
     assert payload["answer"]
-    assert payload["intent"] == "mock_intent"
-    assert payload["evidence"] == []
-    assert payload["fallback"] is True
-    assert payload["fallback_reason"] == "Day 2 mock mode: retrieval is not connected yet."
+    assert isinstance(payload["intent"], str)
+    assert isinstance(payload["evidence"], list)
+    assert isinstance(payload["fallback"], bool)
     assert payload["trace_id"].startswith("trace_")
 
 

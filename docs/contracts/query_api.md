@@ -1,9 +1,8 @@
 # Query API Contract
 
 This document defines the Week 1 `/chat` API contract for Enterprise RAG
-Copilot. Day 2 keeps the endpoint in mock mode, but the request and response
-shape is intentionally stable so retrieval, evidence, fallback, and tracing can
-be added later without breaking clients.
+Copilot. Day 5 connects the endpoint to a naive RAG v0 pipeline while preserving
+the Day 2 response shape.
 
 ## `GET /health`
 
@@ -42,15 +41,21 @@ Accepts one user question in a session and returns a structured answer object.
 | `session_id` | string | yes | Non-empty conversation/session identifier. Whitespace is stripped. |
 | `query` | string | yes | User question. Whitespace is stripped. Must contain at least 2 characters and at most 1000 characters. |
 
-### Day 2 Mock Response
+### Successful Response Example
 
 ```json
 {
-  "answer": "This is a Day 2 mock response. The /chat API contract is ready, but retrieval and evidence-grounded generation are not connected yet.",
-  "intent": "mock_intent",
-  "evidence": [],
-  "fallback": true,
-  "fallback_reason": "Day 2 mock mode: retrieval is not connected yet.",
+  "answer": "根据当前检索到的证据（return_policy.md）：退货政策 七天无理由退货 签收后 7 天内...",
+  "intent": "policy_question",
+  "evidence": [
+    {
+      "source": "return_policy.md",
+      "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
+      "score": 0.4812
+    }
+  ],
+  "fallback": false,
+  "fallback_reason": null,
   "trace_id": "trace_2ad8e0b78b5741a4a53a87b2d98ff3e6"
 }
 ```
@@ -59,10 +64,10 @@ Accepts one user question in a session and returns a structured answer object.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `answer` | string | yes | Final answer text. In Day 2 this is a mock response. From Day 5 onward it must be grounded in retrieved evidence. |
-| `intent` | string | yes | Query intent label. In Day 2 this is `mock_intent`; later versions can replace it with heuristic or routed intent. |
-| `evidence` | array | yes | List of evidence objects. Day 2 returns an empty list because retrieval is not connected yet. |
-| `fallback` | boolean | yes | Whether the system used a fallback path. Day 2 returns `true` to avoid pretending mock output is retrieval-backed. |
+| `answer` | string | yes | Final answer text. In RAG v0 it is generated only from retrieved evidence. |
+| `intent` | string | yes | Query intent label. Week 1 uses simple labels such as `policy_question` and `unknown`. |
+| `evidence` | array | yes | List of evidence objects returned by retrieval. |
+| `fallback` | boolean | yes | Whether the system used a fallback path. |
 | `fallback_reason` | string or null | yes | Human-readable reason when `fallback` is true. |
 | `trace_id` | string | yes | Request trace identifier. Day 2 generates a UUID-based value with a `trace_` prefix. |
 
@@ -106,6 +111,13 @@ Examples of invalid input:
 
 ## Current Boundary
 
-Day 2 only fixes the API contract. It does not run retrieval, build prompts, or
-generate evidence-grounded answers. Those behaviors will be added later through
-the generic RAG pipeline while preserving this response shape.
+Day 5 runs a naive RAG v0 pipeline:
+
+```text
+query -> retrieve -> build_prompt -> generate_answer -> ChatResponse
+```
+
+The retriever uses a deterministic keyword fallback, not a semantic embedding
+model. The answer generator is rule-based and only organizes retrieved evidence.
+If retrieval returns no sufficiently relevant evidence, `/chat` returns
+`fallback=true`.
