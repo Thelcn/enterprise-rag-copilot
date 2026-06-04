@@ -78,3 +78,29 @@ order is eligible.
 Introduce structured order/product lookup, combine SQL evidence with document
 evidence, and make answer generation distinguish general policy from specific
 user eligibility.
+
+## 4. Broad Chunks Can Pull Weakly Related Evidence
+
+### Example
+
+Query:
+
+```text
+退货政策是什么？
+```
+
+### Current Behavior
+
+The top evidence includes `return_policy.md`, which is correct. Because the
+Week 1 chunking strategy uses broad document-level chunks and keyword overlap,
+we may also see weaker evidence from `faq.md` or `logistics_policy.md`.
+
+### Impact
+
+The answer can become longer than necessary and may include adjacent after-sales
+information that is not strictly required for the user question.
+
+### Week 2 Improvement
+
+Tune chunk size, add metadata filters, introduce reranking, or use evaluation
+cases to measure whether the top evidence is precise enough for the question.

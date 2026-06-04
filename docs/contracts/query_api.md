@@ -60,6 +60,31 @@ Accepts one user question in a session and returns a structured answer object.
 }
 ```
 
+### Fallback Response Example
+
+Request:
+
+```json
+{
+  "user_id": "u1",
+  "session_id": "s1",
+  "query": "量子咖啡会员积分怎么兑换？"
+}
+```
+
+Response:
+
+```json
+{
+  "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
+  "intent": "unknown",
+  "evidence": [],
+  "fallback": true,
+  "fallback_reason": "No retrieval evidence met the minimum score threshold.",
+  "trace_id": "trace_0eb3763a9cb54b74a3b52ae21fc844a3"
+}
+```
+
 ### Response Fields
 
 | Field | Type | Required | Notes |
@@ -69,7 +94,7 @@ Accepts one user question in a session and returns a structured answer object.
 | `evidence` | array | yes | List of evidence objects returned by retrieval. |
 | `fallback` | boolean | yes | Whether the system used a fallback path. |
 | `fallback_reason` | string or null | yes | Human-readable reason when `fallback` is true. |
-| `trace_id` | string | yes | Request trace identifier. Day 2 generates a UUID-based value with a `trace_` prefix. |
+| `trace_id` | string | yes | Request trace identifier. Week 1 generates a UUID-based value with a `trace_` prefix. |
 
 ### Evidence Object
 
@@ -121,3 +146,19 @@ The retriever uses a deterministic keyword fallback, not a semantic embedding
 model. The answer generator is rule-based and only organizes retrieved evidence.
 If retrieval returns no sufficiently relevant evidence, `/chat` returns
 `fallback=true`.
+
+## Week 1 Verification
+
+Verified on 2026-06-04:
+
+```powershell
+python -m pytest -q
+```
+
+Result:
+
+```text
+21 passed
+```
+
+Manual `/chat` checks covered one successful policy query and one fallback query.

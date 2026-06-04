@@ -136,6 +136,13 @@ The current RAG v0 can:
 - Generate a simple evidence-grounded answer.
 - Return fallback for low-evidence questions.
 
+Week 1 final verification on 2026-06-04:
+
+- `python -m pytest -q`: `21 passed`.
+- `/health`: returns service metadata.
+- `/chat` with `退货政策是什么？`: returns evidence and `fallback=false`.
+- `/chat` with an unrelated membership-points query: returns `fallback=true`.
+
 ## Known Limits
 
 - Keyword fallback is not semantic retrieval.
@@ -143,6 +150,8 @@ The current RAG v0 can:
 - `/chat` answers policy questions only; it does not inspect specific orders.
 - Mock order/product JSON is not yet connected to a structured query tool.
 - No production tracing, evaluation suite, reranking, or real deployment setup.
+- Dockerfile exists, but Docker build/run still needs to be re-verified after
+  Docker Desktop's Linux engine is available on the development machine.
 
 ## Week 2 Direction
 

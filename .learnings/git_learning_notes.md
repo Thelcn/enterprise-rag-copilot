@@ -1372,3 +1372,158 @@ docs: ...
 ```
 
 具体用哪个取决于变化重点。Day 6 同时有 Docker/logging 和文档，所以使用 `chore`。
+
+## 2026-06-04：Day 7 提交 Week 1 收尾文档和总结
+
+### 本次 Git 目标
+
+Day 7 已完成 Week 1 收尾，本次 Git 操作的目标是：
+
+1. 提交 README 的 Week 1 final verification 更新。
+2. 提交 API contract、architecture、failure cases 的收尾补充。
+3. 提交 `notes/failure_log.md` 和 `notes/week1_summary.md`。
+4. 提交 Day 7 学习笔记。
+5. 推送到 GitHub，形成 Week 1 完整历史。
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+本次看到：
+
+```text
+ M README.md
+ M docs/contracts/query_api.md
+ M docs/design/architecture.md
+ M docs/failure_cases.md
+?? .learnings/day7_week1_wrapup_learning_notes.md
+?? notes/
+```
+
+含义：
+
+- `M`：已有文档被更新。
+- `??`：新增 Week 1 notes 和 Day 7 学习笔记。
+
+Day 7 没有新增大功能，主要是文档和阶段总结。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 10
+```
+
+本次最新提交是：
+
+```text
+8f1592d (HEAD -> main, origin/main, origin/HEAD) chore: add docker logging and architecture docs
+```
+
+说明本地和远程都停在 Day 6 commit，Day 7 还没有提交。
+
+### 3. 查看文档变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+本次看到：
+
+```text
+README.md                   | 52 +++++++++++++++++++++++++++++++++++++++++++++
+docs/contracts/query_api.md | 43 ++++++++++++++++++++++++++++++++++++-
+docs/design/architecture.md |  9 ++++++++
+docs/failure_cases.md       | 26 +++++++++++++++++++++++
+```
+
+注意：这个统计只显示已追踪文件。新增的 `notes/` 和 Day 7 学习笔记还要通过 `git status --short` 查看。
+
+### 4. 暂存 Day 7 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把 Day 7 文档、notes、学习笔记和 Git 学习文档一起加入暂存区。
+
+本次应进入暂存区的主要文件：
+
+- `README.md`
+- `docs/contracts/query_api.md`
+- `docs/design/architecture.md`
+- `docs/failure_cases.md`
+- `notes/failure_log.md`
+- `notes/week1_summary.md`
+- `.learnings/day7_week1_wrapup_learning_notes.md`
+- `.learnings/git_learning_notes.md`
+
+### 5. 提交前检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：确认下一次 commit 包含哪些文件。
+
+Day 7 是收尾提交，尤其要确认 `notes/` 进入 commit，因为 failure log 和 Week 1 summary 是项目 Review Gate 的关键交付物。
+
+### 6. 创建 Day 7 commit
+
+执行命令：
+
+```powershell
+git commit -m "docs: finalize week1 rag progress and next steps"
+```
+
+commit message 含义：
+
+- `docs`：这次主要是文档和阶段总结。
+- `finalize week1 rag progress and next steps`：收尾 Week 1 进度，并写清楚后续方向。
+
+为什么这次用 `docs`？
+
+Day 7 没有新增大功能，主要是 README、契约、架构、failure log 和 summary。所以 `docs` 比 `feat` 或 `chore` 更准确。
+
+### 7. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把 Day 7 commit 上传到 GitHub。
+
+### 本次 Git 学习点
+
+### 文档和总结也应该进版本历史
+
+Week 1 的 failure log、summary、API examples 和 architecture updates 不是临时笔记。它们说明项目为什么这样设计、如何验证、有哪些限制。
+
+把这些文件提交进 Git，有几个好处：
+
+- reviewer 可以看到完整上下文。
+- 之后可以追踪 Week 1 到 Week 2 的演进。
+- 面试复盘时可以直接引用真实项目记录。
+
+### 收尾 commit 应该把状态说完整
+
+Day 7 的 commit message 不是简单写 `update docs`，而是：
+
+```text
+docs: finalize week1 rag progress and next steps
+```
+
+它表达了这次提交的目的：完成 Week 1 收尾，并为 Week 2 留出方向。
