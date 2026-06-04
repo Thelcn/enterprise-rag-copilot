@@ -865,3 +865,167 @@ Day 2 commit 是 `/chat` API 契约。
 Day 3 commit 是数据和 loader。
 
 这种节奏比把多天内容堆成一个大 commit 更容易 review，也更适合你之后复盘项目成长路径。
+
+## 2026-06-04：Day 4 提交 chunking、keyword fallback index 和 retriever
+
+### 本次 Git 目标
+
+Day 4 已完成并通过测试，本次 Git 操作的目标是：
+
+1. 提交 `Chunk` schema、chunker、keyword fallback embedder、in-memory index、retriever。
+2. 提交 `tests/test_retriever.py` 和 `experiments/README.md`。
+3. 提交 Day 4 学习笔记。
+4. 推送到 GitHub。
+5. 推送完成后继续开始 Day 5。
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+本次看到：
+
+```text
+ M app/schemas/document.py
+?? .learnings/day4_retrieval_fallback_learning_notes.md
+?? app/pipeline/chunker.py
+?? app/pipeline/embedder.py
+?? app/pipeline/retriever.py
+?? app/pipeline/vector_store.py
+?? experiments/
+?? tests/test_retriever.py
+```
+
+含义：
+
+- `M app/schemas/document.py`：已有文件被修改，新增了 `Chunk`。
+- `??`：Day 4 新增文件或目录，Git 还没有追踪。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 5
+```
+
+本次看到最新提交是：
+
+```text
+8a0c441 (HEAD -> main, origin/main, origin/HEAD) feat: add ecommerce documents and loader
+```
+
+说明本地和远程都停在 Day 3 commit，Day 4 还没有提交。
+
+### 3. 查看已追踪文件的 diff 统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+本次只看到：
+
+```text
+app/schemas/document.py | 8 ++++++++
+```
+
+这是因为 `git diff --stat` 默认只显示 Git 已经追踪过的文件修改。Day 4 大部分是新文件，所以还要结合 `git status --short` 看完整状态。
+
+### 4. 暂存 Day 4 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把 Day 4 的新增文件、修改文件和更新后的学习文档都放入暂存区。
+
+本次应进入暂存区的主要文件：
+
+- `app/schemas/document.py`
+- `app/pipeline/chunker.py`
+- `app/pipeline/embedder.py`
+- `app/pipeline/vector_store.py`
+- `app/pipeline/retriever.py`
+- `tests/test_retriever.py`
+- `experiments/README.md`
+- `.learnings/day4_retrieval_fallback_learning_notes.md`
+- `.learnings/git_learning_notes.md`
+- `.learnings/ERRORS.md`
+
+### 5. 提交前检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：确认下一次 commit 会包含哪些文件。
+
+学习点：
+
+Day 4 新增了多个 pipeline 模块，提交前点名尤其重要，能确认没有把 pytest cache、`.venv` 或无关文件带进去。
+
+### 6. 创建 Day 4 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: add chunking and keyword retrieval fallback"
+```
+
+commit message 含义：
+
+- `feat`：新增项目能力。
+- `add chunking and keyword retrieval fallback`：新增文档切分和 keyword fallback 检索。
+
+为什么不用 “vector search”？
+
+因为 Day 4 主线不是一套真实 semantic vector search，而是 deterministic keyword fallback。commit message 应该诚实表达当前能力。
+
+### 7. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把 Day 4 commit 上传到 GitHub 的 `origin/main`。
+
+### 本次 Git 学习点
+
+### commit message 不要夸大实现
+
+Day 4 的检索是 keyword fallback，不是真正 embedding API 或向量数据库。所以 commit message 使用：
+
+```text
+keyword retrieval fallback
+```
+
+这比写成 “add vector search” 更准确。
+
+### 已追踪修改和未追踪文件要一起看
+
+这次 `git diff --stat` 只显示 `document.py`，但 `git status --short` 显示了所有 Day 4 新文件。
+
+所以提交前常用组合是：
+
+```powershell
+git status --short
+git diff --stat
+git diff --cached --name-only
+```
+
+它们分别回答：
+
+- 当前有哪些改动？
+- 已追踪文件改了多少？
+- 即将提交哪些文件？

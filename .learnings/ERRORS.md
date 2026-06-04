@@ -32,6 +32,38 @@ Running `.venv\Scripts\python.exe -m ensurepip --upgrade --default-pip` reproduc
 
 ---
 
+## [ERR-20260604-005] git_learning_notes_patch_context
+
+**Logged**: 2026-06-04T16:50:00+08:00
+**Priority**: low
+**Status**: handled
+**Area**: docs
+
+### Summary
+Updating `git_learning_notes.md` for Day 4 initially failed because the patch context did not match the file content exactly.
+
+### Error
+```text
+apply_patch verification failed: Failed to find expected lines
+```
+
+### Context
+- Operation attempted: append Day 4 Git learning notes before committing Day 4
+- File: `.learnings/git_learning_notes.md`
+- Cause: the patch used an expected context line that did not match the actual markdown content exactly.
+
+### Suggested Fix
+Read the tail of the file first and append using exact nearby context, or append at the end of the document with minimal context.
+
+### Resolution
+Inspected the actual tail of `git_learning_notes.md`, then appended the Day 4 Git learning entry using the correct end-of-file context.
+
+### Metadata
+- Reproducible: no
+- Related Files: .learnings/git_learning_notes.md
+
+---
+
 ## [ERR-20260604-004] powershell_curl_json_quoting
 
 **Logged**: 2026-06-04T16:25:00+08:00

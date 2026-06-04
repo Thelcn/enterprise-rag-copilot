@@ -9,3 +9,11 @@ class Document(BaseModel):
     source: str = Field(..., min_length=1)
     content: str = Field(..., min_length=1)
     metadata: dict[str, MetadataValue] = Field(default_factory=dict)
+
+
+class Chunk(BaseModel):
+    id: str = Field(..., min_length=1)
+    document_id: str = Field(..., min_length=1)
+    source: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    metadata: dict[str, MetadataValue] = Field(default_factory=dict)
