@@ -32,6 +32,48 @@ Running `.venv\Scripts\python.exe -m ensurepip --upgrade --default-pip` reproduc
 
 ---
 
+## [ERR-20260604-006] docker_build_daemon_unavailable
+
+**Logged**: 2026-06-04T17:20:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+Day 6 Docker build verification could not complete because Docker Desktop's Linux engine was not available.
+
+### Error
+First attempt:
+
+```text
+ERROR: open C:\Users\hp\.docker\buildx\.lock: Access is denied.
+```
+
+Second attempt with elevated permission:
+
+```text
+ERROR: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+```
+
+### Context
+- Command attempted: `docker build -t enterprise-rag-copilot:week1 .`
+- Docker CLI was installed: `Docker version 29.3.1`
+- The Docker daemon or Docker Desktop Linux engine was not reachable.
+
+### Suggested Fix
+Start Docker Desktop and ensure the Linux engine is running, then rerun:
+
+```powershell
+docker build -t enterprise-rag-copilot:week1 .
+docker run --rm -p 8000:8000 enterprise-rag-copilot:week1
+```
+
+### Metadata
+- Reproducible: yes
+- Related Files: Dockerfile, .dockerignore
+
+---
+
 ## [ERR-20260604-005] git_learning_notes_patch_context
 
 **Logged**: 2026-06-04T16:50:00+08:00

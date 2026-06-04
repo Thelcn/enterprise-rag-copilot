@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+env
+__pycache__
+*.pyc
+.pytest_cache
+pytest-cache-files-*
+.env
+.env.*
+!.env.example
+.learnings
+rag_copilot_week1_execution_plan.pdf
+.DS_Store
+Thumbs.db

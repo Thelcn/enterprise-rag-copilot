@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     service_name: str = "enterprise-rag-copilot"
     service_version: str = "0.1.0"
     environment: str = "development"
+    log_level: str = "INFO"
 
     model_config = SettingsConfigDict(
         env_file=".env",

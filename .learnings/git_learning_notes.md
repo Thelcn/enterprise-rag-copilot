@@ -1193,3 +1193,182 @@ connect chat endpoint to naive rag pipeline
 ```
 
 这样以后看 git log，就能清楚知道哪一天 `/chat` 真正接入了 RAG v0。
+
+## 2026-06-04：Day 6 提交 Docker、logging 和工程文档
+
+### 本次 Git 目标
+
+Day 6 已完成并通过本地测试，本次 Git 操作的目标是：
+
+1. 提交 Dockerfile 和 `.dockerignore`。
+2. 提交 logging 配置和 RAG pipeline stage 日志。
+3. 提交 architecture 文档和 AI development workflow 文档。
+4. 提交 README 的 Week 1 当前状态更新。
+5. 提交 Day 6 学习笔记和 Docker build 环境问题记录。
+6. 推送到 GitHub。
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+本次看到：
+
+```text
+ M .env.example
+ M .learnings/ERRORS.md
+ M Dockerfile
+ M README.md
+ M app/core/config.py
+ M app/main.py
+ M app/pipeline/rag_pipeline.py
+?? .dockerignore
+?? .learnings/day6_docker_logging_docs_learning_notes.md
+?? app/core/logging_config.py
+?? docs/ai-development-workflow.md
+?? docs/design/
+```
+
+含义：
+
+- `M` 表示已有文件被修改。
+- `??` 表示新增文件或目录。
+
+Day 6 既有运行代码变化，也有文档变化，所以提交前要确认两类文件都纳入 commit。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline --decorate -n 6
+```
+
+本次最新提交是：
+
+```text
+1cab260 (HEAD -> main, origin/main, origin/HEAD) feat: connect chat endpoint to naive rag pipeline
+```
+
+说明本地和远程都停在 Day 5 commit，Day 6 还未提交。
+
+### 3. 查看已追踪文件变化统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+本次看到：
+
+```text
+.env.example                 |   1 +
+.learnings/ERRORS.md         |  42 +++++++++++++++++
+Dockerfile                   |   1 +
+README.md                    | 104 ++++++++++++++++++++++++++++++++++++++-----
+app/core/config.py           |   1 +
+app/main.py                  |  11 +++++
+app/pipeline/rag_pipeline.py |  28 ++++++++++++
+```
+
+这个统计只展示已追踪文件。Day 6 的新文件，比如 `.dockerignore` 和 architecture 文档，还需要通过 `git status --short` 查看。
+
+### 4. 暂存 Day 6 文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：把 Day 6 的代码、文档、学习笔记和错误记录全部加入暂存区。
+
+本次应进入暂存区的主要文件：
+
+- `Dockerfile`
+- `.dockerignore`
+- `.env.example`
+- `app/core/logging_config.py`
+- `app/core/config.py`
+- `app/main.py`
+- `app/pipeline/rag_pipeline.py`
+- `docs/design/architecture.md`
+- `docs/ai-development-workflow.md`
+- `README.md`
+- `.learnings/day6_docker_logging_docs_learning_notes.md`
+- `.learnings/ERRORS.md`
+- `.learnings/git_learning_notes.md`
+
+### 5. 提交前检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：确认下一次 commit 会包含哪些文件。
+
+Day 6 是工程化提交，容易漏掉 `.dockerignore` 或文档文件，所以提交前点名很重要。
+
+### 6. 创建 Day 6 commit
+
+执行命令：
+
+```powershell
+git commit -m "chore: add docker logging and architecture docs"
+```
+
+commit message 含义：
+
+- `chore`：工程配置、文档和基础设施改进。
+- `add docker logging and architecture docs`：本次主要新增 Docker、logging 和架构文档。
+
+为什么这次用 `chore` 而不是 `feat`？
+
+Day 6 没有新增用户可见业务能力，主要是工程可复现、可解释、可维护性建设，所以 `chore` 更合适。
+
+### 7. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：把 Day 6 commit 上传到 GitHub。
+
+### 本次 Git 学习点
+
+### 环境验收失败不一定阻止提交
+
+Day 6 的 Docker build 因为 Docker Desktop daemon 不可用而失败：
+
+```text
+failed to connect to the docker API ... dockerDesktopLinuxEngine
+```
+
+这类问题已经记录到 `.learnings/ERRORS.md`，并且本地 pytest 与 HTTP 验收通过。
+
+所以可以提交当前代码和文档，同时在 review/后续验收中明确说明 Docker build 还需要在 Docker Desktop 启动后重跑。
+
+关键是：不要隐藏失败，也不要把未验证的 Docker build 说成已通过。
+
+### `chore` commit 也很重要
+
+不是所有 commit 都必须是功能开发。
+
+Docker、logging、README、architecture 文档这类工作，属于项目能否被别人复现和理解的关键工程资产。
+
+这类提交适合用：
+
+```text
+chore: ...
+docs: ...
+```
+
+具体用哪个取决于变化重点。Day 6 同时有 Docker/logging 和文档，所以使用 `chore`。

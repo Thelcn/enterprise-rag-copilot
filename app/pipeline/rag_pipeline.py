@@ -1,3 +1,6 @@
+from time import perf_counter
+
+from app.core.logging_config import get_logger
 from app.pipeline.answer_generator import generate_answer
 from app.pipeline.prompt_builder import build_prompt
 from app.pipeline.retriever import KeywordRetriever
@@ -8,6 +11,7 @@ from app.schemas.trace import new_trace_id
 
 
 MIN_RETRIEVAL_SCORE = 0.05
+logger = get_logger(__name__)
 
 
 class RagPipeline:
@@ -31,11 +35,28 @@ class RagPipeline:
         return cls(retriever=retriever, min_score=min_score)
 
     def run_chat(self, query: str, user_id: str, session_id: str, top_k: int = 3) -> ChatResponse:
+        started_at = perf_counter()
         trace_id = new_trace_id()
+        logger.info("rag_stage trace_id=%s stage=start top_k=%s", trace_id, top_k)
+
+        retrieval_started_at = perf_counter()
         evidence = self.retriever.retrieve(query, top_k=top_k)
         evidence = _filter_evidence_by_score(evidence, min_score=self.min_score)
+        retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
+        logger.info(
+            "rag_stage trace_id=%s stage=retrieve evidence_count=%s latency_ms=%.2f",
+            trace_id,
+            len(evidence),
+            retrieval_ms,
+        )
 
         if not evidence:
+            total_ms = (perf_counter() - started_at) * 1000
+            logger.info(
+                "rag_stage trace_id=%s stage=fallback reason=no_evidence latency_ms=%.2f",
+                trace_id,
+                total_ms,
+            )
             return ChatResponse(
                 answer="我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
                 intent="unknown",
@@ -47,6 +68,13 @@ class RagPipeline:
 
         prompt = build_prompt(query=query, evidence=evidence)
         answer = generate_answer(prompt=prompt, evidence=evidence)
+        total_ms = (perf_counter() - started_at) * 1000
+        logger.info(
+            "rag_stage trace_id=%s stage=answer evidence_count=%s latency_ms=%.2f",
+            trace_id,
+            len(evidence),
+            total_ms,
+        )
         return ChatResponse(
             answer=answer,
             intent="policy_question",
