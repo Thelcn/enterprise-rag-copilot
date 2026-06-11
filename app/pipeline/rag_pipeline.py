@@ -34,7 +34,15 @@ class RagPipeline:
         )
         return cls(retriever=retriever, min_score=min_score)
 
-    def run_chat(self, query: str, user_id: str, session_id: str, top_k: int = 3) -> ChatResponse:
+    def run_chat(
+        self,
+        query: str,
+        user_id: str,
+        session_id: str,
+        top_k: int = 3,
+        intent: str | None = None,
+        route: str = "document_only",
+    ) -> ChatResponse:
         started_at = perf_counter()
         trace_id = new_trace_id()
         logger.info("rag_stage trace_id=%s stage=start top_k=%s", trace_id, top_k)
@@ -59,7 +67,8 @@ class RagPipeline:
             )
             return ChatResponse(
                 answer="我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
-                intent="unknown",
+                intent=intent or "unknown",
+                route="fallback",
                 evidence=[],
                 fallback=True,
                 fallback_reason="No retrieval evidence met the minimum score threshold.",
@@ -77,7 +86,8 @@ class RagPipeline:
         )
         return ChatResponse(
             answer=answer,
-            intent="policy_question",
+            intent=intent or "policy_question",
+            route=route,
             evidence=evidence,
             fallback=False,
             fallback_reason=None,
@@ -91,9 +101,18 @@ def run_chat(
     session_id: str,
     documents: list[Document],
     top_k: int = 3,
+    intent: str | None = None,
+    route: str = "document_only",
 ) -> ChatResponse:
     pipeline = RagPipeline.from_documents(documents)
-    return pipeline.run_chat(query=query, user_id=user_id, session_id=session_id, top_k=top_k)
+    return pipeline.run_chat(
+        query=query,
+        user_id=user_id,
+        session_id=session_id,
+        top_k=top_k,
+        intent=intent,
+        route=route,
+    )
 
 
 def _filter_evidence_by_score(evidence: list[Evidence], min_score: float) -> list[Evidence]:

@@ -183,3 +183,57 @@ may cite a less relevant chunk.
 
 Add intent-aware metadata filtering, evaluation cases, and a clearer fallback
 reason for weak policy evidence.
+
+## 8. Structured Tools Need Explicit IDs
+
+### Example
+
+Query:
+
+```text
+我的耳机多少钱？
+```
+
+### Current Behavior
+
+Week 2 Day 2 introduces structured ecommerce tools, but product lookup still
+requires a product ID such as `P-HEADPHONE-01`. The system should not guess which
+product the user means from a product nickname alone.
+
+### Impact
+
+The system can identify that the question is about product information, but it
+must fallback with `missing_product_id` unless a later slot-filling step asks the
+user for the missing product ID.
+
+### Week 2 Improvement
+
+Keep the structured tool error explicit for now. A later fallback handler or
+dialogue step can turn `missing_product_id` into a user-facing clarification.
+
+## 9. Hybrid Routing Is Still Minimal
+
+### Example
+
+Query:
+
+```text
+订单 ORD-1001 的耳机现在还能退货吗？
+```
+
+### Current Behavior
+
+Week 2 Day 2 can route this as `hybrid` and combine order structured evidence
+with document evidence. However, it does not yet have a dedicated evidence
+builder, product-level eligibility checks, or a full fallback policy for partial
+hybrid evidence.
+
+### Impact
+
+The answer can show the two evidence sources, but it should still be reviewed as
+a minimal hybrid prototype rather than a complete eligibility decision engine.
+
+### Week 2 Improvement
+
+Day 4 should normalize structured and document evidence through an evidence
+builder. Day 5 should centralize fallback semantics for partial hybrid answers.

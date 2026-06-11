@@ -1734,3 +1734,196 @@ fallback 不能乱编答案
 `docs/week2_upgrade_plan.md` 和 `docs/api.md` 不是临时说明，而是项目演进的依据。
 
 把它们进入 Git 历史，之后就能清楚看到项目是如何从 Week1 naive RAG v0 逐步升级到 Week2 Hybrid RAG 的。
+
+---
+
+# Week2 Day2 Git 学习记录：提交 Intent Router 与 Structured Tools
+
+## 本次 Git 操作背景
+
+Week2 Day2 完成了从 naive RAG 到 Hybrid RAG 的第一步：让精确事实问题不再只走文档检索。
+
+本次准备提交的主要内容：
+
+- `app/pipeline/intent_router.py`：通用 intent router 机制。
+- `app/domains/ecommerce/schema.py`：电商 Order、Product、Refund、ToolResult schema。
+- `app/domains/ecommerce/repository.py`：集中读取 mock JSON 数据。
+- `app/domains/ecommerce/tools.py`：订单、商品、退款 structured tools。
+- `data/ecommerce/mock/refunds.json`：退款 mock 数据。
+- `app/api/routes.py`：让 `/chat` 根据 route 分流到 structured/document/hybrid/fallback。
+- `app/schemas/chat.py`：新增 `route` 字段。
+- `tests/test_ecommerce_tools.py`、`tests/test_intent_router.py`、`tests/test_week2_chat_routes.py`：新增 Day2 测试。
+- `.learnings/week2_day2_intent_router_structured_tools_learning_notes.md`：Day2 学习笔记。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+确认 Day2 修改了哪些文件，以及哪些新增文件还没有被 Git 跟踪。
+
+本次看到：
+
+- `M`：已有文件被修改，例如 `app/api/routes.py`、`app/schemas/chat.py`、`README.md`。
+- `??`：新增文件，例如 `intent_router.py`、`schema.py`、`repository.py`、`tools.py`、Day2 测试和学习笔记。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline -5
+```
+
+作用：
+
+确认当前最新提交是 Week2 Day1：
+
+```text
+92543df docs: add week2 upgrade plan and baseline checks
+```
+
+这说明本次提交应该是 Week2 Day2 的新提交。
+
+### 3. 查看变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+作用：
+
+快速判断这次提交的规模。
+
+本次 Day2 涉及较多文件，因为它新增了一个完整的 structured tools 层和对应测试。
+
+### 4. 提交前运行全量测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认 intent router、structured tools、旧的 Week1 baseline、API contract 都没有被破坏。
+
+本次结果：
+
+```text
+44 passed
+```
+
+仍然看到两个 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响本次提交。
+
+### 5. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把 Day2 的代码、测试、文档、mock 数据和学习笔记放进暂存区。
+
+### 6. 检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：
+
+提交前最后确认 commit 会包含哪些文件。
+
+这一步可以避免漏掉新增文件，比如 `refunds.json` 或 `.learnings/week2_day2...md`。
+
+### 7. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: add ecommerce structured tools and intent router"
+```
+
+commit message 含义：
+
+- `feat`：这次不是纯文档，而是新增了可运行功能。
+- `add ecommerce structured tools and intent router`：说明新增了电商结构化工具和意图路由器。
+
+### 8. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把 Day2 commit 推送到 GitHub 远程仓库。
+
+## 本次 Git 学习点
+
+### 功能提交要用 `feat`
+
+Day1 主要是计划、文档和 baseline tests，所以用了 `docs`。
+
+Day2 新增了：
+
+- intent router
+- repository
+- structured tools
+- `/chat` route 分流
+
+这些属于新功能，所以更适合用：
+
+```text
+feat: add ecommerce structured tools and intent router
+```
+
+### 新增文件最容易漏提交
+
+Git 对新增文件显示 `??`。
+
+如果只提交已追踪文件，可能会漏掉：
+
+```text
+app/pipeline/intent_router.py
+app/domains/ecommerce/tools.py
+data/ecommerce/mock/refunds.json
+tests/test_ecommerce_tools.py
+```
+
+所以新增模块较多时，`git diff --cached --name-only` 很重要。
+
+### 提交前测试是保护线
+
+本次 Day2 改了 `/chat` 的分流逻辑，风险比纯文档提交更高。
+
+所以提交前必须跑：
+
+```powershell
+python -m pytest -q
+```
+
+`44 passed` 说明 Day2 新功能和 Week1 基线目前可以共存。

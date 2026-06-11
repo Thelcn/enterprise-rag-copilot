@@ -1,6 +1,11 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.evidence import Evidence
+
+
+RouteName = Literal["structured_only", "document_only", "hybrid", "fallback"]
 
 # /chat 的请求
 class ChatRequest(BaseModel):
@@ -28,6 +33,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     intent: str
+    route: RouteName = "document_only"
     evidence: list[Evidence] = Field(default_factory=list)
     fallback: bool
     fallback_reason: str | None = None

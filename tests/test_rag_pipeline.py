@@ -22,6 +22,7 @@ def test_rag_pipeline_returns_evidence_grounded_policy_answer() -> None:
     assert response.fallback is False
     assert response.fallback_reason is None
     assert response.intent == "policy_question"
+    assert response.route == "document_only"
     assert response.evidence
     assert response.evidence[0].source == "return_policy.md"
     assert "退货" in response.answer
@@ -75,6 +76,7 @@ def test_chat_endpoint_uses_rag_pipeline() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["fallback"] is False
+    assert payload["route"] == "document_only"
     assert payload["evidence"]
     assert payload["evidence"][0]["source"] == "return_policy.md"
     assert payload["trace_id"].startswith("trace_")

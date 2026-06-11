@@ -1,0 +1,42 @@
+[
+  {
+    "refund_id": "RF1001",
+    "order_id": "ORD-1003",
+    "user_id": "demo_user_002",
+    "status": "approved",
+    "amount": 699.0,
+    "requested_at": "2026-05-22T12:10:00+08:00",
+    "updated_at": "2026-05-23T09:30:00+08:00",
+    "reason": "商品质量问题"
+  },
+  {
+    "refund_id": "RF1002",
+    "order_id": "ORD-1005",
+    "user_id": "demo_user_004",
+    "status": "rejected",
+    "amount": 1199.0,
+    "requested_at": "2026-05-18T15:20:00+08:00",
+    "updated_at": "2026-05-19T11:05:00+08:00",
+    "reason": "商品不支持无理由退货"
+  },
+  {
+    "refund_id": "RF1003",
+    "order_id": "ORD-1006",
+    "user_id": "demo_user_005",
+    "status": "refunded",
+    "amount": 499.0,
+    "requested_at": "2026-06-02T11:30:00+08:00",
+    "updated_at": "2026-06-03T10:00:00+08:00",
+    "reason": "订单取消后退款"
+  },
+  {
+    "refund_id": "RF1004",
+    "order_id": "ORD-1001",
+    "user_id": "demo_user_001",
+    "status": "processing",
+    "amount": 499.0,
+    "requested_at": "2026-06-01T09:15:00+08:00",
+    "updated_at": "2026-06-01T17:45:00+08:00",
+    "reason": "七天无理由退货"
+  }
+]

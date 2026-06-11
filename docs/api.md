@@ -1,8 +1,8 @@
 # API Contract
 
-This document records the current Week 1 API contract and the Week 2 target
-shape. The current implementation must remain stable while the hybrid RAG
-upgrade is added in small steps.
+This document records the current API contract and the Week 2 target shape.
+The implementation must remain stable while the hybrid RAG upgrade is added in
+small steps.
 
 ## `GET /health`
 
@@ -55,6 +55,7 @@ Field meanings:
 {
   "answer": "根据当前检索到的证据（return_policy.md）：...",
   "intent": "policy_question",
+  "route": "document_only",
   "evidence": [
     {
       "source": "return_policy.md",
@@ -72,7 +73,9 @@ Current field meanings:
 
 - `answer`: final answer generated from retrieved evidence. In Week 1 this is a
   deterministic rule-based answer, not a real LLM answer.
-- `intent`: coarse intent label returned by the current RAG pipeline.
+- `intent`: intent label returned by the intent router or current RAG pipeline.
+- `route`: route selected for the request. Current values include
+  `structured_only`, `document_only`, `hybrid`, and `fallback`.
 - `evidence`: document evidence used to support the answer.
 - `evidence[].source`: source document name.
 - `evidence[].content`: retrieved chunk text.
@@ -88,6 +91,7 @@ Current field meanings:
 {
   "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
   "intent": "unknown",
+  "route": "fallback",
   "evidence": [],
   "fallback": true,
   "fallback_reason": "No retrieval evidence met the minimum score threshold.",
@@ -98,10 +102,45 @@ Current field meanings:
 Fallback means the service did not find enough reliable evidence. It should not
 invent missing facts.
 
+### Current Structured Response
+
+Week 2 Day 2 adds structured ecommerce tools. Order, refund, and product fact
+questions can return structured evidence instead of document evidence.
+
+Example request:
+
+```json
+{
+  "user_id": "demo_user_001",
+  "session_id": "week2_demo_session",
+  "query": "我的订单 ORD-1001 现在是什么状态？"
+}
+```
+
+Example response shape:
+
+```json
+{
+  "answer": "订单 ORD-1001 当前状态是 已签收，关联商品是 P-HEADPHONE-01，退款状态是 未申请。",
+  "intent": "order_status",
+  "route": "structured_only",
+  "evidence": [
+    {
+      "source": "structured:orders:ORD-1001",
+      "content": "{\"order_id\":\"ORD-1001\",\"status\":\"delivered\"}",
+      "score": 1.0
+    }
+  ],
+  "fallback": false,
+  "fallback_reason": null,
+  "trace_id": "trace_..."
+}
+```
+
 ## Week 2 Target Response
 
-Week 2 will extend the response shape as hybrid RAG features are introduced.
-The target shape is:
+Week 2 will continue extending the response shape as evidence and tracing
+features are introduced. The target shape is:
 
 ```json
 {
@@ -130,8 +169,7 @@ The target shape is:
 
 Target field meanings:
 
-- `route`: routing decision from the intent router. Expected values are
-  `structured_only`, `document_only`, `hybrid`, and `fallback`.
+- `route`: routing decision from the intent router.
 - `evidence[].evidence_id`: stable identifier for an evidence item inside one
   response.
 - `evidence[].evidence_type`: `structured` for tool/repository facts or

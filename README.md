@@ -74,6 +74,7 @@ Example response shape:
 {
   "answer": "根据当前检索到的证据（return_policy.md）：...",
   "intent": "policy_question",
+  "route": "document_only",
   "evidence": [
     {
       "source": "return_policy.md",
@@ -97,6 +98,7 @@ curl.exe -s -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/jso
 {
   "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
   "intent": "unknown",
+  "route": "fallback",
   "evidence": [],
   "fallback": true,
   "fallback_reason": "No retrieval evidence met the minimum score threshold.",
@@ -117,10 +119,14 @@ app/
   domains/
     ecommerce/
       adapter.py
+      repository.py
+      schema.py
+      tools.py
   pipeline/
     document_loader.py
     chunker.py
     embedder.py
+    intent_router.py
     vector_store.py
     retriever.py
     prompt_builder.py
@@ -142,8 +148,12 @@ tests/
   test_health.py
   test_chat_contract.py
   test_document_loader.py
+  test_ecommerce_tools.py
+  test_intent_router.py
   test_retriever.py
   test_rag_pipeline.py
+  test_week1_baseline.py
+  test_week2_chat_routes.py
 ```
 
 ## Week 1 Progress

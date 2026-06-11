@@ -22,6 +22,7 @@ def test_chat_returns_stable_contract() -> None:
     assert set(payload.keys()) == {
         "answer",
         "intent",
+        "route",
         "evidence",
         "fallback",
         "fallback_reason",
@@ -29,6 +30,7 @@ def test_chat_returns_stable_contract() -> None:
     }
     assert payload["answer"]
     assert isinstance(payload["intent"], str)
+    assert isinstance(payload["route"], str)
     assert isinstance(payload["evidence"], list)
     assert isinstance(payload["fallback"], bool)
     assert payload["trace_id"].startswith("trace_")

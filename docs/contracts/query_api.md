@@ -1,8 +1,8 @@
 # Query API Contract
 
-This document defines the Week 1 `/chat` API contract for Enterprise RAG
-Copilot. Day 5 connects the endpoint to a naive RAG v0 pipeline while preserving
-the Day 2 response shape.
+This document defines the current `/chat` API contract for Enterprise RAG
+Copilot. Week 1 connected the endpoint to a naive RAG v0 pipeline, and Week 2
+adds route information for hybrid RAG.
 
 ## `GET /health`
 
@@ -47,6 +47,7 @@ Accepts one user question in a session and returns a structured answer object.
 {
   "answer": "根据当前检索到的证据（return_policy.md）：退货政策 七天无理由退货 签收后 7 天内...",
   "intent": "policy_question",
+  "route": "document_only",
   "evidence": [
     {
       "source": "return_policy.md",
@@ -78,6 +79,7 @@ Response:
 {
   "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
   "intent": "unknown",
+  "route": "fallback",
   "evidence": [],
   "fallback": true,
   "fallback_reason": "No retrieval evidence met the minimum score threshold.",
@@ -91,6 +93,7 @@ Response:
 | --- | --- | --- | --- |
 | `answer` | string | yes | Final answer text. In RAG v0 it is generated only from retrieved evidence. |
 | `intent` | string | yes | Query intent label. Week 1 uses simple labels such as `policy_question` and `unknown`. |
+| `route` | string | yes | Week 2 routing decision such as `structured_only`, `document_only`, `hybrid`, or `fallback`. |
 | `evidence` | array | yes | List of evidence objects returned by retrieval. |
 | `fallback` | boolean | yes | Whether the system used a fallback path. |
 | `fallback_reason` | string or null | yes | Human-readable reason when `fallback` is true. |

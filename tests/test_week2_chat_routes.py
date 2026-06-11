@@ -1,0 +1,80 @@
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+client = TestClient(app)
+
+
+def test_chat_routes_order_status_to_structured_tool() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day2",
+            "query": "我的订单 ORD-1001 现在是什么状态？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "order_status"
+    assert payload["route"] == "structured_only"
+    assert payload["fallback"] is False
+    assert payload["evidence"]
+    assert payload["evidence"][0]["source"] == "structured:orders:ORD-1001"
+    assert "ORD-1001" in payload["answer"]
+
+
+def test_chat_routes_refund_status_to_structured_tool() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_002",
+            "session_id": "week2-day2",
+            "query": "退款 RF1001 处理到哪一步了？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "refund"
+    assert payload["route"] == "structured_only"
+    assert payload["fallback"] is False
+    assert payload["evidence"][0]["source"] == "structured:refunds:RF1001"
+
+
+def test_chat_fallbacks_when_order_id_is_missing() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day2",
+            "query": "我的订单现在是什么状态？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "order_status"
+    assert payload["route"] == "fallback"
+    assert payload["fallback"] is True
+    assert payload["fallback_reason"] == "missing_order_id"
+
+
+def test_chat_keeps_policy_questions_on_document_route() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day2",
+            "query": "退货政策是什么？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "return_policy"
+    assert payload["route"] == "document_only"
+    assert payload["fallback"] is False
+    assert payload["evidence"][0]["source"] == "return_policy.md"
