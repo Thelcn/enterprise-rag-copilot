@@ -3,7 +3,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from app.schemas.document import Chunk, Document
 
-
+# 文档切分器，将文档分割成更小的文本块，便于后续处理和索引
 def split_documents(
     documents: list[Document],
     chunk_size: int = 500,
@@ -88,14 +88,14 @@ def _split_long_text(text: str, chunk_size: int, overlap: int) -> list[str]:
 
     return chunks
 
-
+# 处理重叠部分
 def _overlap_tail(previous: str, overlap: int, next_text: str) -> str:
     if overlap == 0:
         return next_text
     tail = previous[-overlap:].strip()
     return f"{tail}\n\n{next_text}" if tail else next_text
 
-
+# 构建chunk id，确保同一文档、同一位置的chunk具有相同id，便于去重和更新
 def _build_chunk_id(document_id: str, chunk_index: int, content: str) -> str:
     stable_key = f"{document_id}:{chunk_index}:{content}"
     return f"chunk_{uuid5(NAMESPACE_URL, stable_key).hex}"

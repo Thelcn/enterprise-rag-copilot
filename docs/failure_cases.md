@@ -104,3 +104,82 @@ information that is not strictly required for the user question.
 
 Tune chunk size, add metadata filters, introduce reranking, or use evaluation
 cases to measure whether the top evidence is precise enough for the question.
+
+## 5. Order Status Questions Are Routed Through Documents
+
+### Example
+
+Query:
+
+```text
+我的订单 ORD-1001 到哪里了？
+```
+
+### Current Behavior
+
+Week 1 v0 only searches markdown policy documents. It has mock order data in the
+repository, but the chat flow does not yet have structured ecommerce tools, so
+the question cannot be answered from the right data source.
+
+### Impact
+
+The system may fallback or retrieve generic logistics policy even though the
+user asked for a precise order-specific fact.
+
+### Week 2 Improvement
+
+Add an intent router and ecommerce structured tools so order-status questions
+can use `structured_only` routing and cite structured evidence.
+
+## 6. Hybrid Eligibility Questions Need Two Evidence Sources
+
+### Example
+
+Query:
+
+```text
+订单 ORD-1001 的耳机现在还能退货吗？
+```
+
+### Current Behavior
+
+The question needs order facts, product information, and return-policy rules.
+Week 1 v0 can retrieve general return policy, but it cannot combine that policy
+with structured order state, delivery date, or product metadata.
+
+### Impact
+
+The answer can explain the general policy but cannot safely decide whether this
+specific order is eligible.
+
+### Week 2 Improvement
+
+Use `hybrid` routing: query structured tools for order/product facts, retrieve
+policy documents, normalize both into evidence, and fallback if either side is
+missing.
+
+## 7. Policy Evidence Can Be Empty Or Too Weak
+
+### Example
+
+Query:
+
+```text
+拆封后还能不能七天无理由？
+```
+
+### Current Behavior
+
+The keyword fallback depends on lexical overlap. If the wording does not match
+the policy document closely enough, the retriever may return weak evidence or no
+evidence even though the question is about return policy.
+
+### Impact
+
+The user may receive a fallback for a supported policy question, or the system
+may cite a less relevant chunk.
+
+### Week 2 Improvement
+
+Add intent-aware metadata filtering, evaluation cases, and a clearer fallback
+reason for weak policy evidence.

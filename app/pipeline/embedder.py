@@ -33,7 +33,7 @@ def tokenize_text(text: str) -> list[str]:
 
     return tokens
 
-
+# 计算两个关键词向量之间的余弦相似度，值越接近1表示越相似，越接近0表示越不相似
 def cosine_similarity(left: KeywordVector, right: KeywordVector) -> float:
     if not left or not right:
         return 0.0

@@ -10,7 +10,7 @@ from app.schemas.chat import ChatRequest, ChatResponse
 
 router = APIRouter()
 
-
+# 进行健康度检查，返回服务状态和配置信息
 @router.get("/health")
 def health_check() -> dict[str, str]:
     settings = get_settings()
@@ -21,7 +21,7 @@ def health_check() -> dict[str, str]:
         "environment": settings.environment,
     }
 
-
+# /chat 路由
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     pipeline = get_chat_pipeline()

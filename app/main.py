@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes import router
-from app.core.config import get_settings
+from app.core.config import get_settings # 读取配置
 from app.core.logging_config import configure_logging, get_logger
 
 

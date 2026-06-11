@@ -1527,3 +1527,210 @@ docs: finalize week1 rag progress and next steps
 ```
 
 它表达了这次提交的目的：完成 Week 1 收尾，并为 Week 2 留出方向。
+
+---
+
+# Week2 Day1 Git 学习记录：提交升级计划、API 契约和 baseline tests
+
+## 本次 Git 操作背景
+
+Week2 Day1 的主要目标是：
+
+- 审阅 Week1 naive RAG v0。
+- 新增 Week2 Hybrid RAG 升级计划。
+- 新增 `/chat` API 契约文档。
+- 新增 Week1 baseline tests，防止后续升级破坏主路径。
+- 更新 README 和 failure cases。
+- 提交 Week2-Day4 的计划 PDF，方便后续任务继续引用。
+
+另外，本次工作区里有一些你复习代码时添加的中文注释，例如：
+
+```text
+app/api/routes.py
+app/core/config.py
+app/main.py
+app/pipeline/chunker.py
+app/pipeline/embedder.py
+app/schemas/chat.py
+app/schemas/document.py
+app/schemas/evidence.py
+app/schemas/trace.py
+```
+
+我检查过这些 diff，它们只是注释，没有改变运行逻辑，所以这次一起提交，避免 Day2 开始前工作区一直是 dirty 状态。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+查看哪些文件被修改、哪些文件是新增但还没有进入 Git 跟踪。
+
+本次看到的重点：
+
+- `M` 表示已追踪文件被修改，比如 `README.md`、`docs/failure_cases.md`。
+- `??` 表示新增文件还没有被 Git 跟踪，比如 `docs/api.md`、`tests/test_week1_baseline.py`、Week2-Day4 PDF。
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline -5
+```
+
+作用：
+
+确认当前提交历史停在哪里，避免重复提交或基于错误分支继续工作。
+
+本次看到最新提交是：
+
+```text
+2221914 docs: finalize week1 rag progress and next steps
+```
+
+说明 Week1 已经提交完成，本次应该是 Week2 Day1 的新提交。
+
+### 3. 查看具体 diff
+
+执行命令：
+
+```powershell
+git diff -- app/main.py app/pipeline/chunker.py app/pipeline/embedder.py app/schemas/document.py app/schemas/trace.py app/api/routes.py app/core/config.py app/schemas/chat.py app/schemas/evidence.py
+```
+
+作用：
+
+确认那些 app 文件是不是功能改动。
+
+本次结论：
+
+这些文件主要是新增中文注释，没有改变函数逻辑、请求响应结构或 RAG 流程。
+
+### 4. 查看 PDF 大小
+
+执行命令：
+
+```powershell
+Get-ChildItem rag_copilot_week2_execution_plan.pdf, rag_copilot_week3_execution_plan.pdf, rag_copilot_week4_execution_plan.pdf | Select-Object Name,Length
+```
+
+作用：
+
+确认新增 PDF 不算特别大，可以进入仓库作为项目计划材料。
+
+本次三个 PDF 大约是：
+
+```text
+826 KB
+728 KB
+549 KB
+```
+
+### 5. 提交前运行测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认提交前项目仍然可运行，尤其是新增 baseline tests 不会破坏已有测试。
+
+本次结果：
+
+```text
+25 passed
+```
+
+仍然存在两个 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响当前测试通过，属于已知环境/依赖提醒。
+
+### 6. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把当前工作区里准备提交的所有修改加入暂存区。
+
+这一步之后可以用下面命令检查暂存区：
+
+```powershell
+git diff --cached --name-only
+```
+
+### 7. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "docs: add week2 upgrade plan and baseline checks"
+```
+
+commit message 含义：
+
+- `docs`：本次主要是文档和计划。
+- `add week2 upgrade plan and baseline checks`：说明新增了 Week2 升级计划和 Week1 baseline 检查。
+
+虽然本次也新增了测试文件，但整体任务性质仍然是 Day1 设计和基线保护，所以使用 `docs` 是可以接受的。
+
+### 8. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把本地 Week2 Day1 commit 上传到远程 GitHub 仓库。
+
+## 本次 Git 学习点
+
+### 提交前一定要看 diff
+
+`git status` 只能告诉我们“哪些文件变了”，不能告诉我们“怎么变了”。
+
+这次如果只看 status，会看到很多 app 文件被改了，容易误以为 Day1 动了核心逻辑。
+
+但看过 `git diff` 后可以确认：这些 app 文件只是新增注释，没有行为变化。
+
+### baseline tests 是升级前的安全网
+
+Week2 后面会加 intent router、structured tools、evidence builder、fallback handler 等模块。
+
+这些改动可能会影响 `/chat`。
+
+所以先提交 baseline tests，可以让后续每次改动都有一个最低保护线：
+
+```text
+/health 还要通
+/chat 还要返回 answer
+/chat 还要返回 evidence
+fallback 不能乱编答案
+```
+
+### 文档也值得被提交
+
+`docs/week2_upgrade_plan.md` 和 `docs/api.md` 不是临时说明，而是项目演进的依据。
+
+把它们进入 Git 历史，之后就能清楚看到项目是如何从 Week1 naive RAG v0 逐步升级到 Week2 Hybrid RAG 的。

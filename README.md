@@ -156,6 +156,19 @@ tests/
 - Day 6: Docker, logging, architecture docs, and AI workflow docs.
 - Day 7: Full test/API verification, failure log, and Week 1 summary.
 
+## Week 2 Roadmap
+
+Week 2 upgrades the naive RAG v0 into a hybrid RAG engineering prototype while
+preserving the Week 1 baseline.
+
+- Day 1: Review v0, document the upgrade plan, and add baseline tests.
+- Day 2: Add intent routing and ecommerce structured tools.
+- Day 3: Add metadata rules and document filtering.
+- Day 4: Normalize structured and document evidence for hybrid responses.
+- Day 5: Centralize fallback handling and failure semantics.
+- Day 6: Add evaluation cases, an evaluation runner, and performance tracing.
+- Day 7: Add cache/load-test demo artifacts and write the Week 2 summary.
+
 ## Week 1 Verification
 
 Completed on 2026-06-04:
