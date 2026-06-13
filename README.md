@@ -77,6 +77,8 @@ Example response shape:
   "route": "document_only",
   "evidence": [
     {
+      "evidence_id": "ev_...",
+      "evidence_type": "document",
       "source": "return_policy.md",
       "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
       "score": 0.2459,
@@ -132,6 +134,7 @@ app/
     document_loader.py
     chunker.py
     embedder.py
+    evidence_builder.py
     intent_router.py
     vector_store.py
     retriever.py
@@ -157,6 +160,7 @@ tests/
   test_chat_contract.py
   test_document_loader.py
   test_ecommerce_tools.py
+  test_evidence_builder.py
   test_intent_router.py
   test_metadata_filtering.py
   test_metadata_rules.py

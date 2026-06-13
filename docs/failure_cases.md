@@ -267,3 +267,33 @@ produce weak evidence.
 Keep metadata rules centralized in `domains/ecommerce/metadata_rules.py`, add
 evaluation cases for filter misses, and use Day 4 evidence builder plus Day 5
 fallback handler to make partial evidence safer.
+
+## 11. Answers Must Stay Grounded In Evidence
+
+### Example
+
+Query:
+
+```text
+订单 ORD-1001 的耳机现在还能退货吗？
+```
+
+### Current Behavior
+
+Week 2 Day 4 returns both structured order evidence and document return-policy
+evidence for hybrid questions. The mock answer generator summarizes the first
+evidence items and cites source names, but it still does not perform a full
+eligibility decision or resolve conflicts between structured facts and policy
+text.
+
+### Impact
+
+The response is more traceable than a plain answer, but it should not be treated
+as a final business decision engine. If the answer says a key fact, that fact
+must appear in `response.evidence`.
+
+### Week 2 Improvement
+
+Use the evidence builder output as the source of truth, add evaluation checks for
+unsupported claims, and let Day 5 fallback handler block answers when evidence
+is incomplete or conflicting.

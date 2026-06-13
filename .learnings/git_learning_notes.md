@@ -2112,3 +2112,175 @@ Day3 有一次测试假设错误：以为错误的 document_type 一定返回空
 - 学习笔记解释实现方式
 
 这类提交比只提交代码更容易 review，也更适合之后面试复盘。
+
+---
+
+# Week2 Day4 Git 学习记录：提交 Evidence Builder 与 Evidence Contract
+
+## 本次 Git 操作背景
+
+Week2 Day4 完成的是 evidence builder 和 citation 约束。
+
+本次准备提交的主要内容：
+
+- `app/schemas/evidence.py`：Evidence 新增 `evidence_id`、`evidence_type`，`content` 支持 `str | dict`。
+- `app/pipeline/evidence_builder.py`：统一 structured tool result 和 document retrieval evidence。
+- `app/domains/ecommerce/tools.py`：structured evidence 的 content 改成可解析 dict。
+- `app/api/routes.py`：structured/document/hybrid 三条路径都通过 evidence builder。
+- `app/pipeline/prompt_builder.py`：prompt 注入 evidence id、type、source、metadata、content，并明确 evidence-first 约束。
+- `app/pipeline/answer_generator.py`：无 evidence 不回答，并减少政策元数据噪音。
+- `tests/test_evidence_builder.py`：新增 evidence builder 测试。
+- `.learnings/week2_day4_evidence_builder_learning_notes.md`：Day4 学习笔记。
+- `.learnings/ERRORS.md`：记录随机 evidence_id 破坏 retriever deterministic test 的问题。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+确认 Day4 修改了哪些文件，以及新增文件是否还未被 Git 跟踪。
+
+本次特别要注意新增的：
+
+```text
+app/pipeline/evidence_builder.py
+tests/test_evidence_builder.py
+.learnings/week2_day4_evidence_builder_learning_notes.md
+```
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline -5
+```
+
+作用：
+
+确认当前最新提交是 Week2 Day3：
+
+```text
+b916bbf feat: support ecommerce metadata-aware retrieval
+```
+
+说明本次应该创建 Week2 Day4 commit。
+
+### 3. 查看变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+作用：
+
+快速确认 Day4 改动范围：Evidence schema、evidence builder、prompt/answer、routes、测试和文档。
+
+### 4. 提交前运行测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认 Evidence schema 变化没有破坏旧 baseline、metadata filtering、structured tools 或 `/chat` 契约。
+
+本次结果：
+
+```text
+60 passed
+```
+
+仍然看到两个已知 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响提交。
+
+### 5. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把 Day4 的代码、测试、文档、错误记录和学习笔记放入暂存区。
+
+### 6. 检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：
+
+确认 Day4 新增文件进入 commit，避免漏掉 `evidence_builder.py` 或测试文件。
+
+### 7. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: add evidence builder and citation contract"
+```
+
+commit message 含义：
+
+- `feat`：这次新增了 evidence builder 功能。
+- `add evidence builder and citation contract`：说明这次既有 builder，也有 evidence/citation 响应契约变化。
+
+### 8. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把 Day4 commit 推送到 GitHub 远程仓库。
+
+## 本次 Git 学习点
+
+### Schema 变化要格外重视测试
+
+Day4 修改了 `Evidence` schema：
+
+```text
+content: str -> str | dict
+score: float -> float | None
+新增 evidence_id / evidence_type
+```
+
+这类变化会影响很多 API 响应和测试，所以提交前跑全量测试非常重要。
+
+### 稳定 ID 比随机 ID 更适合评估
+
+一开始随机 `evidence_id` 破坏了 retriever deterministic test。
+
+RAG evaluation 经常需要比较两次运行的 evidence 是否一致，所以 evidence_id 应该由稳定字段生成，而不是每次随机。
+
+### 同一个 commit 可以包含错误记录
+
+`.learnings/ERRORS.md` 记录了本次实现中发现并修复的问题。
+
+把错误记录和修复一起提交，之后复盘时能看到完整因果链：问题是什么、为什么发生、怎么修。

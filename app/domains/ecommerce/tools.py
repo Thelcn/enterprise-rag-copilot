@@ -1,5 +1,3 @@
-import json
-
 from app.domains.ecommerce.repository import EcommerceRepository
 from app.domains.ecommerce.schema import Order, Product, Refund, StructuredValue, ToolResult
 from app.schemas.evidence import Evidence
@@ -135,9 +133,14 @@ def _tool_success(
         data=data,
         message=message,
         evidence=Evidence(
+            evidence_type="structured",
             source=source,
-            content=json.dumps(data, ensure_ascii=False, sort_keys=True),
+            content=data,
             score=1.0,
+            metadata={
+                "tool_name": tool_name,
+                "evidence_origin": "structured_tool",
+            },
         ),
     )
 

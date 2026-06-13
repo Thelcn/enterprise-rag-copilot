@@ -3,6 +3,7 @@ from app.pipeline.embedder import KeywordEmbedder
 from app.pipeline.vector_store import InMemoryIndex, build_index
 from collections.abc import Mapping
 
+from app.pipeline.evidence_builder import build_evidence_id
 from app.schemas.document import Chunk, Document
 from app.schemas.evidence import Evidence
 
@@ -61,6 +62,8 @@ def retrieve(
         results = index.search(query=query, top_k=top_k)
     return [
         Evidence(
+            evidence_id=build_evidence_id("document", result.chunk.source, result.chunk.content),
+            evidence_type="document",
             source=result.chunk.source,
             content=result.chunk.content,
             score=result.score,

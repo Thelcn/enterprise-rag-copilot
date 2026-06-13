@@ -32,6 +32,39 @@ Running `.venv\Scripts\python.exe -m ensurepip --upgrade --default-pip` reproduc
 
 ---
 
+## [ERR-20260613-001] random_evidence_id_breaks_retriever_determinism
+
+**Logged**: 2026-06-13T20:00:00+08:00
+**Priority**: low
+**Status**: handled
+**Area**: tests
+
+### Summary
+Day4 added `Evidence.evidence_id` with a random default, which broke an existing deterministic retriever test.
+
+### Error
+```text
+FAILED tests/test_retriever.py::test_keyword_fallback_is_deterministic
+AssertionError: assert first == second
+```
+
+### Context
+- Command attempted: `python -m pytest -q`
+- Test: `test_keyword_fallback_is_deterministic`
+- Cause: two identical retrieval calls returned equivalent evidence content but different randomly generated `evidence_id` values.
+
+### Suggested Fix
+Generate document evidence IDs from stable fields such as evidence type, source, and content when building retriever evidence.
+
+### Resolution
+Updated `app/pipeline/retriever.py` to set `evidence_id=build_evidence_id("document", source, content)` and `evidence_type="document"` for retrieved evidence.
+
+### Metadata
+- Reproducible: yes
+- Related Files: app/schemas/evidence.py, app/pipeline/retriever.py, app/pipeline/evidence_builder.py, tests/test_retriever.py
+
+---
+
 ## [ERR-20260611-001] metadata_filtering_test_assumption
 
 **Logged**: 2026-06-11T19:00:00+08:00

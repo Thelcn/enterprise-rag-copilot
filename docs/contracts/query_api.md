@@ -50,6 +50,8 @@ Accepts one user question in a session and returns a structured answer object.
   "route": "document_only",
   "evidence": [
     {
+      "evidence_id": "ev_...",
+      "evidence_type": "document",
       "source": "return_policy.md",
       "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
       "score": 0.4812,
@@ -108,6 +110,8 @@ Response:
 
 ```json
 {
+  "evidence_id": "ev_...",
+  "evidence_type": "document",
   "source": "return_policy.md",
   "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
   "score": 0.82,
@@ -122,8 +126,10 @@ Response:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
+| `evidence_id` | string | yes | Stable evidence identifier generated from type, source, and content. |
+| `evidence_type` | string | yes | `document` for retrieved policy chunks, `structured` for tool/repository facts. |
 | `source` | string | yes | Source document name or source identifier. |
-| `content` | string | yes | Evidence text returned by retrieval. |
+| `content` | string or object | yes | Evidence text returned by retrieval, or structured fields returned by a tool. |
 | `score` | number | yes | Relevance score between `0.0` and `1.0`. Week 1 score semantics may be simple, but must stay explicit. |
 | `metadata` | object | yes | Source metadata. Week 2 policy evidence includes `document_type`, `product_category`, `policy_version`, and `applicable_scenario`. |
 

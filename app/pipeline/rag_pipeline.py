@@ -3,6 +3,7 @@ from collections.abc import Mapping
 
 from app.core.logging_config import get_logger
 from app.pipeline.answer_generator import generate_answer
+from app.pipeline.evidence_builder import build_evidence
 from app.pipeline.prompt_builder import build_prompt
 from app.pipeline.retriever import KeywordRetriever
 from app.schemas.chat import ChatResponse
@@ -56,6 +57,7 @@ class RagPipeline:
             metadata_filter=metadata_filter,
         )
         evidence = _filter_evidence_by_score(evidence, min_score=self.min_score)
+        evidence = build_evidence(retrieved_evidence=evidence)
         retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
         logger.info(
             "rag_stage trace_id=%s stage=retrieve evidence_count=%s latency_ms=%.2f",

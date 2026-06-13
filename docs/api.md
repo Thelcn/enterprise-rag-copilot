@@ -58,6 +58,8 @@ Field meanings:
   "route": "document_only",
   "evidence": [
     {
+      "evidence_id": "ev_...",
+      "evidence_type": "document",
       "source": "return_policy.md",
       "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
       "score": 0.2459,
@@ -81,9 +83,14 @@ Current field meanings:
 - `intent`: intent label returned by the intent router or current RAG pipeline.
 - `route`: route selected for the request. Current values include
   `structured_only`, `document_only`, `hybrid`, and `fallback`.
-- `evidence`: document evidence used to support the answer.
+- `evidence`: structured or document evidence used to support the answer.
+- `evidence[].evidence_id`: stable evidence identifier generated from evidence
+  type, source, and content.
+- `evidence[].evidence_type`: `document` for retrieved policy chunks or
+  `structured` for tool/repository facts.
 - `evidence[].source`: source document name.
-- `evidence[].content`: retrieved chunk text.
+- `evidence[].content`: retrieved chunk text for document evidence, or a
+  structured object for tool evidence.
 - `evidence[].score`: retriever score for the evidence item.
 - `evidence[].metadata`: document or tool metadata. Week 2 Day 3 adds
   `document_type`, `product_category`, `policy_version`, and
@@ -134,10 +141,19 @@ Example response shape:
   "route": "structured_only",
   "evidence": [
     {
+      "evidence_id": "ev_...",
+      "evidence_type": "structured",
       "source": "structured:orders:ORD-1001",
-      "content": "{\"order_id\":\"ORD-1001\",\"status\":\"delivered\"}",
+      "content": {
+        "order_id": "ORD-1001",
+        "status": "delivered",
+        "status_label": "已签收"
+      },
       "score": 1.0,
-      "metadata": {}
+      "metadata": {
+        "tool_name": "get_order_status",
+        "evidence_origin": "structured_tool"
+      }
     }
   ],
   "fallback": false,
@@ -148,8 +164,8 @@ Example response shape:
 
 ## Week 2 Target Response
 
-Week 2 will continue extending the response shape as evidence and tracing
-features are introduced. The target shape is:
+Week 2 will continue extending the response shape as tracing features are
+introduced. The target shape is:
 
 ```json
 {
@@ -180,7 +196,7 @@ Target field meanings:
 
 - `route`: routing decision from the intent router.
 - `evidence[].evidence_id`: stable identifier for an evidence item inside one
-  response.
+  response. Day 4 generates this through the evidence builder.
 - `evidence[].evidence_type`: `structured` for tool/repository facts or
   `document` for retrieved knowledge-base chunks.
 - `evidence[].content`: text for document evidence or a structured object for

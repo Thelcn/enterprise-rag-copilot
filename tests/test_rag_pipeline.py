@@ -24,6 +24,7 @@ def test_rag_pipeline_returns_evidence_grounded_policy_answer() -> None:
     assert response.intent == "policy_question"
     assert response.route == "document_only"
     assert response.evidence
+    assert response.evidence[0].evidence_type == "document"
     assert response.evidence[0].source == "return_policy.md"
     assert "退货" in response.answer
     assert response.trace_id.startswith("trace_")

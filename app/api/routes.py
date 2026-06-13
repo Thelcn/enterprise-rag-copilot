@@ -10,6 +10,7 @@ from app.domains.ecommerce.adapter import (
     load_ecommerce_documents,
 )
 from app.domains.ecommerce.schema import ToolResult
+from app.pipeline.evidence_builder import build_evidence
 from app.pipeline.intent_router import RouteDecision
 from app.pipeline.rag_pipeline import RagPipeline
 from app.schemas.chat import ChatRequest, ChatResponse
@@ -88,7 +89,7 @@ def _run_hybrid_chat(
         route="hybrid",
         metadata_filter=get_ecommerce_metadata_filter(decision.intent),
     )
-    structured_evidence = [order_result.evidence] if order_result.evidence else []
+    structured_evidence = build_evidence(tool_results=[order_result])
     if document_response.fallback:
         return _fallback_response(
             intent=decision.intent,
@@ -98,7 +99,10 @@ def _run_hybrid_chat(
             trace_id=document_response.trace_id,
         )
 
-    evidence = structured_evidence + document_response.evidence
+    evidence = build_evidence(
+        tool_results=[order_result],
+        retrieved_evidence=document_response.evidence,
+    )
     return ChatResponse(
         answer=f"{order_result.message} 同时参考政策证据：{document_response.answer}",
         intent=decision.intent,
@@ -128,7 +132,7 @@ def _run_tool_for_decision(decision: RouteDecision) -> ToolResult:
 
 def _tool_result_to_chat_response(result: ToolResult, decision: RouteDecision) -> ChatResponse:
     trace_id = new_trace_id()
-    evidence = [result.evidence] if result.evidence else []
+    evidence = build_evidence(tool_results=[result])
     if not result.success:
         return ChatResponse(
             answer=f"我无法从结构化业务数据中回答这个问题：{result.message}",
