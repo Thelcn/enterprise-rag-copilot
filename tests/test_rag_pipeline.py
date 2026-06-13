@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.core import errors
 from app.domains.ecommerce.adapter import load_ecommerce_documents
 from app.main import app
 from app.pipeline.answer_generator import generate_answer
@@ -30,7 +31,7 @@ def test_rag_pipeline_returns_evidence_grounded_policy_answer() -> None:
     assert response.trace_id.startswith("trace_")
 
 
-def test_rag_pipeline_fallbacks_when_no_evidence_matches() -> None:
+def test_rag_pipeline_fallbacks_when_retrieval_score_is_low() -> None:
     pipeline = RagPipeline.from_documents(load_ecommerce_documents(), chunk_size=220, overlap=20)
 
     response = pipeline.run_chat(
@@ -40,9 +41,9 @@ def test_rag_pipeline_fallbacks_when_no_evidence_matches() -> None:
     )
 
     assert response.fallback is True
-    assert response.fallback_reason == "No retrieval evidence met the minimum score threshold."
+    assert response.fallback_reason == errors.LOW_RETRIEVAL_SCORE
     assert response.evidence == []
-    assert "没有在当前知识库中找到" in response.answer
+    assert "相关性过低" in response.answer
 
 
 def test_prompt_builder_includes_query_and_evidence() -> None:

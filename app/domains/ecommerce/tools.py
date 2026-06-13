@@ -1,3 +1,4 @@
+from app.core import errors
 from app.domains.ecommerce.repository import EcommerceRepository
 from app.domains.ecommerce.schema import Order, Product, Refund, StructuredValue, ToolResult
 from app.schemas.evidence import Evidence
@@ -27,7 +28,7 @@ class EcommerceTools:
         if not order_id:
             return _tool_error(
                 tool_name="get_order_status",
-                error_code="missing_order_id",
+                error_code=errors.MISSING_ORDER_ID,
                 message="需要订单号才能查询订单状态。",
             )
 
@@ -35,7 +36,7 @@ class EcommerceTools:
         if order is None:
             return _tool_error(
                 tool_name="get_order_status",
-                error_code="order_not_found",
+                error_code=errors.ORDER_NOT_FOUND,
                 message=f"没有找到订单 {order_id}。",
             )
 
@@ -55,7 +56,7 @@ class EcommerceTools:
         if not product_id:
             return _tool_error(
                 tool_name="get_product_info",
-                error_code="missing_product_id",
+                error_code=errors.MISSING_PRODUCT_ID,
                 message="需要商品编号才能查询商品信息。",
             )
 
@@ -63,7 +64,7 @@ class EcommerceTools:
         if product is None:
             return _tool_error(
                 tool_name="get_product_info",
-                error_code="product_not_found",
+                error_code=errors.PRODUCT_NOT_FOUND,
                 message=f"没有找到商品 {product_id}。",
             )
 
@@ -84,7 +85,7 @@ class EcommerceTools:
         if not refund_id:
             return _tool_error(
                 tool_name="get_refund_status",
-                error_code="missing_refund_id",
+                error_code=errors.MISSING_REFUND_ID,
                 message="需要退款编号才能查询退款状态。",
             )
 
@@ -92,7 +93,7 @@ class EcommerceTools:
         if refund is None:
             return _tool_error(
                 tool_name="get_refund_status",
-                error_code="refund_not_found",
+                error_code=errors.REFUND_NOT_FOUND,
                 message=f"没有找到退款单 {refund_id}。",
             )
 

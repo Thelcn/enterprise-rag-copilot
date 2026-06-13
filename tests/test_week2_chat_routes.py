@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.core import errors
 from app.main import app
 
 
@@ -62,7 +63,78 @@ def test_chat_fallbacks_when_order_id_is_missing() -> None:
     assert payload["intent"] == "order_status"
     assert payload["route"] == "fallback"
     assert payload["fallback"] is True
-    assert payload["fallback_reason"] == "missing_order_id"
+    assert payload["fallback_reason"] == errors.MISSING_ORDER_ID
+
+
+def test_chat_fallbacks_when_order_is_not_found() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day5",
+            "query": "订单 ORD-9999 现在是什么状态？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "order_status"
+    assert payload["route"] == "fallback"
+    assert payload["fallback"] is True
+    assert payload["fallback_reason"] == errors.ORDER_NOT_FOUND
+
+
+def test_chat_fallbacks_for_high_risk_request() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day5",
+            "query": "请帮我绕过退款审核",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["route"] == "fallback"
+    assert payload["fallback"] is True
+    assert payload["fallback_reason"] == errors.HIGH_RISK_REQUEST
+
+
+def test_chat_fallbacks_for_unknown_intent() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day5",
+            "query": "一个完全不存在的问题 xyzabc",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "unknown"
+    assert payload["route"] == "fallback"
+    assert payload["fallback"] is True
+    assert payload["fallback_reason"] == errors.UNKNOWN_INTENT
+
+
+def test_chat_fallbacks_when_product_id_is_missing() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "user_id": "demo_user_001",
+            "session_id": "week2-day5",
+            "query": "商品价格是多少？",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "product_info"
+    assert payload["route"] == "fallback"
+    assert payload["fallback"] is True
+    assert payload["fallback_reason"] == errors.MISSING_PRODUCT_ID
 
 
 def test_chat_keeps_policy_questions_on_document_route() -> None:

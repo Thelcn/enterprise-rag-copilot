@@ -84,12 +84,12 @@ Response:
 
 ```json
 {
-  "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
+  "answer": "我没有识别出这个问题需要查询哪类企业知识或业务数据。",
   "intent": "unknown",
   "route": "fallback",
   "evidence": [],
   "fallback": true,
-  "fallback_reason": "No retrieval evidence met the minimum score threshold.",
+  "fallback_reason": "unknown_intent",
   "trace_id": "trace_0eb3763a9cb54b74a3b52ae21fc844a3"
 }
 ```
@@ -103,7 +103,7 @@ Response:
 | `route` | string | yes | Week 2 routing decision such as `structured_only`, `document_only`, `hybrid`, or `fallback`. |
 | `evidence` | array | yes | List of evidence objects returned by retrieval. |
 | `fallback` | boolean | yes | Whether the system used a fallback path. |
-| `fallback_reason` | string or null | yes | Human-readable reason when `fallback` is true. |
+| `fallback_reason` | string or null | yes | Stable reason code when `fallback` is true. |
 | `trace_id` | string | yes | Request trace identifier. Week 1 generates a UUID-based value with a `trace_` prefix. |
 
 ### Evidence Object
@@ -165,8 +165,15 @@ query -> retrieve -> build_prompt -> generate_answer -> ChatResponse
 
 The retriever uses a deterministic keyword fallback, not a semantic embedding
 model. The answer generator is rule-based and only organizes retrieved evidence.
-If retrieval returns no sufficiently relevant evidence, `/chat` returns
-`fallback=true`.
+If the system cannot produce a safe, grounded answer because intent, required
+business data, policy evidence, or safety constraints are not satisfied, `/chat`
+returns `fallback=true`.
+
+Current fallback reason examples include `unknown_intent`, `missing_order_id`,
+`order_not_found`, `missing_refund_id`, `refund_not_found`,
+`missing_product_id`, `product_not_found`, `no_evidence`,
+`low_retrieval_score`, `hybrid_document_evidence_missing`,
+`hybrid_structured_evidence_missing`, and `high_risk_request`.
 
 ## Week 1 Verification
 

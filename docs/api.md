@@ -96,7 +96,7 @@ Current field meanings:
   `document_type`, `product_category`, `policy_version`, and
   `applicable_scenario` for ecommerce policy documents.
 - `fallback`: whether the system refused to answer from insufficient evidence.
-- `fallback_reason`: explanation for fallback, or `null` when the answer is
+- `fallback_reason`: stable fallback reason code, or `null` when the answer is
   supported.
 - `trace_id`: request trace identifier for logs and debugging.
 
@@ -104,18 +104,19 @@ Current field meanings:
 
 ```json
 {
-  "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
+  "answer": "我没有识别出这个问题需要查询哪类企业知识或业务数据。",
   "intent": "unknown",
   "route": "fallback",
   "evidence": [],
   "fallback": true,
-  "fallback_reason": "No retrieval evidence met the minimum score threshold.",
+  "fallback_reason": "unknown_intent",
   "trace_id": "trace_..."
 }
 ```
 
-Fallback means the service did not find enough reliable evidence. It should not
-invent missing facts.
+Fallback means the service could not produce a safe, grounded answer because
+intent, required business data, policy evidence, or safety constraints were not
+satisfied. It should not invent missing facts.
 
 ### Current Structured Response
 
@@ -218,6 +219,12 @@ Week 2 fallback should cover more than low document-retrieval confidence:
 - hybrid question where either structured evidence or document evidence is
   missing
 - unsupported or high-risk question that cannot be grounded in evidence
+
+Current fallback reason examples include `unknown_intent`, `missing_order_id`,
+`order_not_found`, `missing_refund_id`, `refund_not_found`,
+`missing_product_id`, `product_not_found`, `no_evidence`,
+`low_retrieval_score`, `hybrid_document_evidence_missing`,
+`hybrid_structured_evidence_missing`, and `high_risk_request`.
 
 The answer should remain conservative when `fallback=true`.
 

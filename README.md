@@ -103,12 +103,12 @@ curl.exe -s -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/jso
 
 ```json
 {
-  "answer": "我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
+  "answer": "我没有识别出这个问题需要查询哪类企业知识或业务数据。",
   "intent": "unknown",
   "route": "fallback",
   "evidence": [],
   "fallback": true,
-  "fallback_reason": "No retrieval evidence met the minimum score threshold.",
+  "fallback_reason": "unknown_intent",
   "trace_id": "trace_..."
 }
 ```
@@ -122,6 +122,7 @@ app/
     routes.py
   core/
     config.py
+    errors.py
     logging_config.py
   domains/
     ecommerce/
@@ -135,6 +136,7 @@ app/
     chunker.py
     embedder.py
     evidence_builder.py
+    fallback_handler.py
     intent_router.py
     vector_store.py
     retriever.py
@@ -150,6 +152,8 @@ data/
   ecommerce/
     docs/
     mock/
+evaluation/
+  ecommerce_cases.json
 docs/
   contracts/
   design/
@@ -161,6 +165,7 @@ tests/
   test_document_loader.py
   test_ecommerce_tools.py
   test_evidence_builder.py
+  test_fallback_handler.py
   test_intent_router.py
   test_metadata_filtering.py
   test_metadata_rules.py
@@ -228,6 +233,9 @@ Observed behavior:
 - Keyword fallback is deterministic and testable, but it is not semantic embedding.
 - The answer generator is rule-based in Week 1 and only organizes retrieved evidence.
 - If evidence is missing or below threshold, `/chat` returns fallback instead of inventing an answer.
+- Week 2 Day 5 centralizes fallback decisions and returns stable reason codes
+  such as `missing_order_id`, `order_not_found`, `no_evidence`, and
+  `high_risk_request`.
 
 ## Documentation
 

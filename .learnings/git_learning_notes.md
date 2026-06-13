@@ -2284,3 +2284,204 @@ RAG evaluation 经常需要比较两次运行的 evidence 是否一致，所以 
 `.learnings/ERRORS.md` 记录了本次实现中发现并修复的问题。
 
 把错误记录和修复一起提交，之后复盘时能看到完整因果链：问题是什么、为什么发生、怎么修。
+
+---
+
+# Week2 Day5 Git 学习记录：提交集中式 Fallback Handler
+
+## 本次 Git 操作背景
+
+Week2 Day5 完成的是集中式 fallback handler。
+
+本次准备提交的主要内容：
+
+- `app/core/errors.py`：集中定义稳定 fallback reason 常量。
+- `app/pipeline/fallback_handler.py`：统一判断 unknown intent、missing slot、tool failure、low evidence、hybrid partial evidence 和 high-risk request。
+- `app/api/routes.py`：`/chat` 路由接入统一 fallback handler。
+- `app/pipeline/rag_pipeline.py`：文档检索失败改用 `no_evidence` / `low_retrieval_score` 等稳定 reason code。
+- `app/domains/ecommerce/tools.py`：结构化工具错误码改用 `app.core.errors` 常量。
+- `evaluation/ecommerce_cases.json`：新增 Day6 evaluation runner 会使用的电商失败案例。
+- `tests/test_fallback_handler.py`：新增 fallback handler 单元测试。
+- `tests/test_week2_chat_routes.py`、`tests/test_rag_pipeline.py`：补充 API 和 RAG fallback 场景。
+- `.learnings/week2_day5_fallback_handler_learning_notes.md`：Day5 学习笔记。
+- `.learnings/ERRORS.md`：记录一次 `no_evidence` 与 `low_retrieval_score` 测试假设错误。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+确认 Day5 修改和新增了哪些文件。
+
+本次看到：
+
+- `M` 表示已有文件被修改，例如 `app/api/routes.py`、`app/pipeline/rag_pipeline.py`、`README.md`。
+- `??` 表示新增文件，例如 `app/core/errors.py`、`app/pipeline/fallback_handler.py`、`evaluation/`、`tests/test_fallback_handler.py`。
+
+学习点：
+
+新增目录只会显示成 `?? evaluation/`，提交前最好再确认目录里具体是什么文件，避免误提交临时内容。
+
+### 2. 查看变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+作用：
+
+快速了解这次 commit 的改动规模。
+
+本次可以看到主要改动集中在：
+
+```text
+app/api/routes.py
+app/pipeline/rag_pipeline.py
+docs/failure_cases.md
+tests/test_week2_chat_routes.py
+```
+
+这说明 Day5 既有核心代码，也有测试和文档。
+
+### 3. 提交前运行测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认 fallback handler 改动没有破坏旧的 Week1/Week2 baseline。
+
+本次结果：
+
+```text
+73 passed
+```
+
+仍然看到两个已知 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响提交。
+
+### 4. 更新 Git 学习文档
+
+执行前先编辑：
+
+```text
+.learnings/git_learning_notes.md
+```
+
+作用：
+
+把本次 Git 操作的命令、目的、commit message、测试结果和学习点写入文档。
+
+为什么在 commit 前写？
+
+因为如果 commit 后再写 Git 学习文档，工作区又会多出一个未提交修改。先写文档，再把代码、测试、文档和 Git 学习记录一起提交，可以保持提交历史完整。
+
+### 5. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把 Day5 的代码、测试、文档、evaluation cases 和学习笔记放入暂存区。
+
+### 6. 检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：
+
+提交前最后确认将进入 commit 的文件。
+
+本次尤其要确认新增文件：
+
+```text
+app/core/errors.py
+app/pipeline/fallback_handler.py
+evaluation/ecommerce_cases.json
+tests/test_fallback_handler.py
+.learnings/week2_day5_fallback_handler_learning_notes.md
+```
+
+### 7. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: centralize fallback handling"
+```
+
+commit message 含义：
+
+- `feat`：这次新增了集中 fallback 能力，是功能性改动。
+- `centralize fallback handling`：说明核心变化是把 fallback 判断集中到统一 handler。
+
+### 8. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把 Day5 commit 推送到 GitHub 远程仓库。
+
+### 9. 推送后检查
+
+执行命令：
+
+```powershell
+git status --short
+git log --oneline --decorate -n 5
+```
+
+作用：
+
+- `git status --short`：确认没有未提交内容。
+- `git log --oneline --decorate -n 5`：确认最新 commit 同时在本地 `main` 和远程 `origin/main`。
+
+## 本次 Git 学习点
+
+### 稳定 reason code 值得单独提交
+
+Day5 把 fallback reason 从分散字符串收口成稳定 code。
+
+这类改动会影响 API、测试、evaluation 和文档，所以它值得成为一个独立 commit，而不是混在 Day6 evaluation runner 里。
+
+### 新增 evaluation 数据也应该进入版本历史
+
+`evaluation/ecommerce_cases.json` 不是临时测试文件，而是后续自动评测的输入数据。
+
+把它提交进 Git 后，Day6 的 evaluation runner 就能基于稳定数据继续开发。
+
+### 提交前测试可以保护重构类改动
+
+Day5 虽然新增了 handler，但也移动了原来散落在 `routes.py` 和 `rag_pipeline.py` 的 fallback 逻辑。
+
+这类“行为应该保持一致但结构变化很大”的改动，最需要提交前跑全量测试。

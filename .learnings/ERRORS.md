@@ -65,6 +65,39 @@ Updated `app/pipeline/retriever.py` to set `evidence_id=build_evidence_id("docum
 
 ---
 
+## [ERR-20260613-002] fallback_reason_test_assumption_low_score
+
+**Logged**: 2026-06-13T14:52:00+08:00
+**Priority**: low
+**Status**: handled
+**Area**: tests
+
+### Summary
+Day5 fallback pipeline test initially expected `no_evidence`, but the keyword retriever returned weak candidates that were filtered out by the score threshold, so the correct reason was `low_retrieval_score`.
+
+### Error
+```text
+FAILED tests/test_rag_pipeline.py::test_rag_pipeline_fallbacks_when_no_evidence_matches
+AssertionError: assert 'low_retrieval_score' == 'no_evidence'
+```
+
+### Context
+- Command attempted: `python -m pytest tests\test_week2_chat_routes.py tests\test_rag_pipeline.py -q`
+- Query: `量子咖啡会员积分怎么兑换？`
+- Cause: Chinese keyword tokenization can produce very weak lexical matches even when the query is outside the ecommerce policy domain.
+
+### Suggested Fix
+When testing fallback reasons, distinguish "no retrieval candidates" from "retrieval candidates exist but all are below the minimum score." Use `low_retrieval_score` for the latter.
+
+### Resolution
+Updated the RAG pipeline test to expect `errors.LOW_RETRIEVAL_SCORE` and changed the test name to `test_rag_pipeline_fallbacks_when_retrieval_score_is_low`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: app/pipeline/rag_pipeline.py, app/pipeline/fallback_handler.py, tests/test_rag_pipeline.py
+
+---
+
 ## [ERR-20260611-001] metadata_filtering_test_assumption
 
 **Logged**: 2026-06-11T19:00:00+08:00

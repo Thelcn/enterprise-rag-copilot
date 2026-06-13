@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from app.core.logging_config import get_logger
 from app.pipeline.answer_generator import generate_answer
 from app.pipeline.evidence_builder import build_evidence
+from app.pipeline.fallback_handler import build_fallback_chat_response, should_fallback
 from app.pipeline.prompt_builder import build_prompt
 from app.pipeline.retriever import KeywordRetriever
 from app.schemas.chat import ChatResponse
@@ -48,16 +49,17 @@ class RagPipeline:
     ) -> ChatResponse:
         started_at = perf_counter()
         trace_id = new_trace_id()
+        response_intent = intent or "policy_question"
         logger.info("rag_stage trace_id=%s stage=start top_k=%s", trace_id, top_k)
 
         retrieval_started_at = perf_counter()
-        evidence = self.retriever.retrieve(
+        retrieval_candidates = self.retriever.retrieve(
             query,
             top_k=top_k,
             metadata_filter=metadata_filter,
         )
-        evidence = _filter_evidence_by_score(evidence, min_score=self.min_score)
-        evidence = build_evidence(retrieved_evidence=evidence)
+        filtered_evidence = _filter_evidence_by_score(retrieval_candidates, min_score=self.min_score)
+        evidence = build_evidence(retrieved_evidence=filtered_evidence)
         retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
         logger.info(
             "rag_stage trace_id=%s stage=retrieve evidence_count=%s latency_ms=%.2f",
@@ -66,21 +68,27 @@ class RagPipeline:
             retrieval_ms,
         )
 
-        if not evidence:
+        fallback_decision = should_fallback(
+            query=query,
+            intent=response_intent,
+            route=route,
+            evidence=evidence,
+            retrieval_candidates=retrieval_candidates,
+            min_score=self.min_score,
+        )
+        if fallback_decision.fallback:
             total_ms = (perf_counter() - started_at) * 1000
             logger.info(
-                "rag_stage trace_id=%s stage=fallback reason=no_evidence latency_ms=%.2f",
+                "rag_stage trace_id=%s stage=fallback reason=%s latency_ms=%.2f",
                 trace_id,
+                fallback_decision.reason,
                 total_ms,
             )
-            return ChatResponse(
-                answer="我没有在当前知识库中找到足够可靠的证据来回答这个问题。",
-                intent=intent or "unknown",
-                route="fallback",
-                evidence=[],
-                fallback=True,
-                fallback_reason="No retrieval evidence met the minimum score threshold.",
+            return build_fallback_chat_response(
+                decision=fallback_decision,
+                intent=response_intent,
                 trace_id=trace_id,
+                evidence=[],
             )
 
         prompt = build_prompt(query=query, evidence=evidence)
@@ -94,7 +102,7 @@ class RagPipeline:
         )
         return ChatResponse(
             answer=answer,
-            intent=intent or "policy_question",
+            intent=response_intent,
             route=route,
             evidence=evidence,
             fallback=False,

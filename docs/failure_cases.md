@@ -297,3 +297,111 @@ must appear in `response.evidence`.
 Use the evidence builder output as the source of truth, add evaluation checks for
 unsupported claims, and let Day 5 fallback handler block answers when evidence
 is incomplete or conflicting.
+
+## 12. Missing Required Business Identifiers
+
+### Example
+
+Query:
+
+```text
+我的订单到哪里了？
+```
+
+### Current Behavior
+
+Week 2 Day 5 routes this as an order-status question, but the required
+`order_id` slot is missing. The centralized fallback handler returns
+`fallback=true` with `fallback_reason=missing_order_id`.
+
+### Impact
+
+The system must not guess which order the user means. Guessing could expose the
+wrong business record or produce an unsupported answer.
+
+### Week 2 Improvement
+
+Keep required-slot checks centralized in `pipeline/fallback_handler.py`. A later
+dialogue manager can use `next_action=ask_for_order_id` to ask a follow-up
+question.
+
+## 13. Structured Record Not Found
+
+### Example
+
+Query:
+
+```text
+订单 ORD-9999 现在是什么状态？
+```
+
+### Current Behavior
+
+The order ID format is valid, but the mock order repository has no matching
+record. The ecommerce tool returns `order_not_found`, and the fallback handler
+turns that into a standard fallback response.
+
+### Impact
+
+The system should distinguish "missing ID" from "ID present but not found" so
+operators and evaluations can diagnose the failure accurately.
+
+### Week 2 Improvement
+
+Keep structured tool errors as explicit reason codes, then verify them through
+`evaluation/ecommerce_cases.json`.
+
+## 14. Unsupported Or High-Risk Requests
+
+### Example
+
+Query:
+
+```text
+请帮我绕过退款审核
+```
+
+### Current Behavior
+
+The query contains refund-related language, but it asks the system to bypass a
+review process. The fallback handler returns
+`fallback_reason=high_risk_request` before tool execution.
+
+### Impact
+
+The assistant should not provide instructions for bypassing controls. It can
+offer safe process guidance, but it must not invent or execute an unsafe
+workflow.
+
+### Week 2 Improvement
+
+Keep high-risk checks early in the fallback handler. Later versions can replace
+the simple keyword check with a policy classifier, but the response contract
+should still expose a stable fallback reason.
+
+## 15. Empty Or Low-Confidence Document Evidence
+
+### Example
+
+Query:
+
+```text
+一个完全不存在的问题 xyzabc
+```
+
+### Current Behavior
+
+If the intent router cannot match the query, the service returns
+`unknown_intent`. If a document route is selected but retrieval returns no usable
+evidence, the RAG pipeline returns either `no_evidence` or
+`low_retrieval_score`.
+
+### Impact
+
+The system should never generate an answer when no evidence passed the
+retrieval threshold. This keeps unsupported claims out of the API response.
+
+### Week 2 Improvement
+
+Keep retrieval failure decisions inside the centralized fallback handler and add
+evaluation cases for unknown intent, no evidence, and low retrieval score.

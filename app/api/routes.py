@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from fastapi import APIRouter
 
+from app.core import errors
 from app.core.config import get_settings
 from app.domains.ecommerce.adapter import (
     get_ecommerce_metadata_filter,
@@ -11,10 +12,10 @@ from app.domains.ecommerce.adapter import (
 )
 from app.domains.ecommerce.schema import ToolResult
 from app.pipeline.evidence_builder import build_evidence
+from app.pipeline.fallback_handler import build_fallback_chat_response, should_fallback
 from app.pipeline.intent_router import RouteDecision
 from app.pipeline.rag_pipeline import RagPipeline
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.evidence import Evidence
 from app.schemas.trace import new_trace_id
 
 
@@ -35,21 +36,26 @@ def health_check() -> dict[str, str]:
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     decision = get_ecommerce_intent_router().route(request.query)
-    pipeline = get_chat_pipeline()
+    fallback_decision = should_fallback(
+        query=request.query,
+        intent=decision.intent,
+        route=decision.route,
+        required_slots=decision.required_slots,
+        slots=decision.slots,
+    )
+    if fallback_decision.fallback:
+        return build_fallback_chat_response(
+            decision=fallback_decision,
+            intent=decision.intent,
+            trace_id=new_trace_id(),
+        )
 
     if decision.route == "structured_only":
         return _run_structured_chat(decision)
 
+    pipeline = get_chat_pipeline()
     if decision.route == "hybrid":
         return _run_hybrid_chat(request=request, decision=decision, pipeline=pipeline)
-
-    if decision.route == "fallback":
-        return _fallback_response(
-            intent=decision.intent,
-            reason=decision.reason or "unknown_intent",
-            message="我没有识别出这个问题需要查询哪类企业知识或业务数据。",
-            evidence=[],
-        )
 
     return pipeline.run_chat(
         query=request.query,
@@ -91,18 +97,39 @@ def _run_hybrid_chat(
     )
     structured_evidence = build_evidence(tool_results=[order_result])
     if document_response.fallback:
-        return _fallback_response(
+        fallback_decision = should_fallback(
+            query=request.query,
             intent=decision.intent,
-            reason="hybrid_document_evidence_missing",
-            message="我找到了订单信息，但没有找到足够可靠的政策证据来判断这个具体问题。",
+            route="hybrid",
             evidence=structured_evidence,
+            tool_results=[order_result],
+        )
+        return build_fallback_chat_response(
+            decision=fallback_decision,
+            intent=decision.intent,
             trace_id=document_response.trace_id,
+            evidence=structured_evidence,
         )
 
     evidence = build_evidence(
         tool_results=[order_result],
         retrieved_evidence=document_response.evidence,
     )
+    fallback_decision = should_fallback(
+        query=request.query,
+        intent=decision.intent,
+        route="hybrid",
+        evidence=evidence,
+        tool_results=[order_result],
+    )
+    if fallback_decision.fallback:
+        return build_fallback_chat_response(
+            decision=fallback_decision,
+            intent=decision.intent,
+            trace_id=document_response.trace_id,
+            evidence=evidence,
+        )
+
     return ChatResponse(
         answer=f"{order_result.message} 同时参考政策证据：{document_response.answer}",
         intent=decision.intent,
@@ -125,7 +152,7 @@ def _run_tool_for_decision(decision: RouteDecision) -> ToolResult:
     return ToolResult(
         tool_name="unknown_structured_tool",
         success=False,
-        error_code="unsupported_structured_intent",
+        error_code=errors.UNSUPPORTED_STRUCTURED_INTENT,
         message=f"当前结构化工具不支持 intent={decision.intent}。",
     )
 
@@ -133,15 +160,19 @@ def _run_tool_for_decision(decision: RouteDecision) -> ToolResult:
 def _tool_result_to_chat_response(result: ToolResult, decision: RouteDecision) -> ChatResponse:
     trace_id = new_trace_id()
     evidence = build_evidence(tool_results=[result])
-    if not result.success:
-        return ChatResponse(
-            answer=f"我无法从结构化业务数据中回答这个问题：{result.message}",
+    fallback_decision = should_fallback(
+        query="",
+        intent=decision.intent,
+        route=decision.route,
+        evidence=evidence,
+        tool_results=[result],
+    )
+    if fallback_decision.fallback:
+        return build_fallback_chat_response(
+            decision=fallback_decision,
             intent=decision.intent,
-            route="fallback",
-            evidence=evidence,
-            fallback=True,
-            fallback_reason=result.error_code,
             trace_id=trace_id,
+            evidence=evidence,
         )
 
     return ChatResponse(
@@ -152,22 +183,4 @@ def _tool_result_to_chat_response(result: ToolResult, decision: RouteDecision) -
         fallback=False,
         fallback_reason=None,
         trace_id=trace_id,
-    )
-
-
-def _fallback_response(
-    intent: str,
-    reason: str,
-    message: str,
-    evidence: list[Evidence],
-    trace_id: str | None = None,
-) -> ChatResponse:
-    return ChatResponse(
-        answer=message,
-        intent=intent,
-        route="fallback",
-        evidence=evidence,
-        fallback=True,
-        fallback_reason=reason,
-        trace_id=trace_id or new_trace_id(),
     )

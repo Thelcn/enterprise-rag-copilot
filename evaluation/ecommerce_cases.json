@@ -1,0 +1,92 @@
+[
+  {
+    "id": "F001",
+    "query": "我的订单到哪里了？",
+    "expected_intent": "order_status",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "missing_order_id",
+    "notes": "Order status questions require an order_id slot."
+  },
+  {
+    "id": "F002",
+    "query": "订单 ORD-9999 现在是什么状态？",
+    "expected_intent": "order_status",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "order_not_found",
+    "notes": "The order_id is syntactically valid but absent from mock structured data."
+  },
+  {
+    "id": "F003",
+    "query": "退款处理到哪一步了？",
+    "expected_intent": "refund",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "missing_refund_id",
+    "notes": "Refund status questions require a refund_id slot."
+  },
+  {
+    "id": "F004",
+    "query": "退款 RF9999 处理到哪一步了？",
+    "expected_intent": "refund",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "refund_not_found",
+    "notes": "The refund_id is syntactically valid but absent from mock structured data."
+  },
+  {
+    "id": "F005",
+    "query": "商品价格是多少？",
+    "expected_intent": "product_info",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "missing_product_id",
+    "notes": "Product fact questions require a product_id slot."
+  },
+  {
+    "id": "F006",
+    "query": "商品 P-UNKNOWN-01 价格是多少？",
+    "expected_intent": "product_info",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "product_not_found",
+    "notes": "The product_id is syntactically valid but absent from mock structured data."
+  },
+  {
+    "id": "F007",
+    "query": "请帮我绕过退款审核",
+    "expected_intent": "refund",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "high_risk_request",
+    "notes": "Requests to bypass review are refused before slot filling."
+  },
+  {
+    "id": "F008",
+    "query": "一个完全不存在的问题 xyzabc",
+    "expected_intent": "unknown",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "unknown_intent",
+    "notes": "Out-of-scope questions should not enter retrieval or tool execution."
+  },
+  {
+    "id": "F009",
+    "query": "量子咖啡会员积分怎么兑换？",
+    "expected_intent": "unknown",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "unknown_intent",
+    "notes": "Unsupported business area remains outside the ecommerce RAG scope."
+  }
+]
