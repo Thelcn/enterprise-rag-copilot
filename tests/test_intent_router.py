@@ -47,12 +47,27 @@ def test_router_detects_logistics_intent() -> None:
     assert decision.route == "document_only"
 
 
+def test_router_prefers_logistics_policy_for_shipping_time_question() -> None:
+    decision = get_ecommerce_intent_router().route("发货时间是什么？")
+
+    assert decision.intent == "logistics"
+    assert decision.route == "document_only"
+
+
 def test_router_detects_hybrid_intent() -> None:
     decision = get_ecommerce_intent_router().route("订单 ORD-1001 的耳机现在还能退货吗？")
 
     assert decision.intent == "hybrid"
     assert decision.route == "hybrid"
     assert decision.required_slots == ["order_id"]
+    assert decision.slots["order_id"] == "ORD-1001"
+
+
+def test_router_detects_hybrid_for_order_refund_and_return_policy_question() -> None:
+    decision = get_ecommerce_intent_router().route("订单 EC1001 的退款状态和退货政策是什么？")
+
+    assert decision.intent == "hybrid"
+    assert decision.route == "hybrid"
     assert decision.slots["order_id"] == "ORD-1001"
 
 

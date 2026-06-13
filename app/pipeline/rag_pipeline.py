@@ -1,16 +1,15 @@
-from time import perf_counter
 from collections.abc import Mapping
 
 from app.core.logging_config import get_logger
 from app.pipeline.answer_generator import generate_answer
 from app.pipeline.evidence_builder import build_evidence
 from app.pipeline.fallback_handler import build_fallback_chat_response, should_fallback
+from app.pipeline.performance_tracer import PerformanceTracer
 from app.pipeline.prompt_builder import build_prompt
 from app.pipeline.retriever import KeywordRetriever
 from app.schemas.chat import ChatResponse
 from app.schemas.document import Document
 from app.schemas.evidence import Evidence
-from app.schemas.trace import new_trace_id
 
 
 MIN_RETRIEVAL_SCORE = 0.05
@@ -46,21 +45,27 @@ class RagPipeline:
         intent: str | None = None,
         route: str = "document_only",
         metadata_filter: Mapping[str, object] | None = None,
+        tracer: PerformanceTracer | None = None,
     ) -> ChatResponse:
-        started_at = perf_counter()
-        trace_id = new_trace_id()
+        owns_tracer = tracer is None
+        tracer = tracer or PerformanceTracer()
+        trace_id = tracer.trace_id
         response_intent = intent or "policy_question"
         logger.info("rag_stage trace_id=%s stage=start top_k=%s", trace_id, top_k)
 
-        retrieval_started_at = perf_counter()
-        retrieval_candidates = self.retriever.retrieve(
-            query,
+        with tracer.span(
+            "retrieval",
             top_k=top_k,
-            metadata_filter=metadata_filter,
-        )
-        filtered_evidence = _filter_evidence_by_score(retrieval_candidates, min_score=self.min_score)
-        evidence = build_evidence(retrieved_evidence=filtered_evidence)
-        retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
+            metadata_filter_applied=metadata_filter is not None,
+        ):
+            retrieval_candidates = self.retriever.retrieve(
+                query,
+                top_k=top_k,
+                metadata_filter=metadata_filter,
+            )
+            filtered_evidence = _filter_evidence_by_score(retrieval_candidates, min_score=self.min_score)
+            evidence = build_evidence(retrieved_evidence=filtered_evidence)
+        retrieval_ms = tracer.to_trace_info().stages[-1].latency_ms
         logger.info(
             "rag_stage trace_id=%s stage=retrieve evidence_count=%s latency_ms=%.2f",
             trace_id,
@@ -68,37 +73,46 @@ class RagPipeline:
             retrieval_ms,
         )
 
+        with tracer.span("rerank_mock", candidate_count=len(retrieval_candidates)):
+            reranked_evidence = evidence
+        evidence = reranked_evidence
+
+        fallback_route = "document_only" if route == "hybrid" else route
         fallback_decision = should_fallback(
             query=query,
             intent=response_intent,
-            route=route,
+            route=fallback_route,
             evidence=evidence,
             retrieval_candidates=retrieval_candidates,
             min_score=self.min_score,
         )
         if fallback_decision.fallback:
-            total_ms = (perf_counter() - started_at) * 1000
+            with tracer.span("fallback", reason=fallback_decision.reason):
+                pass
+            trace = tracer.finish() if owns_tracer else tracer.to_trace_info()
             logger.info(
                 "rag_stage trace_id=%s stage=fallback reason=%s latency_ms=%.2f",
                 trace_id,
                 fallback_decision.reason,
-                total_ms,
+                trace.total_latency_ms or 0.0,
             )
             return build_fallback_chat_response(
                 decision=fallback_decision,
                 intent=response_intent,
                 trace_id=trace_id,
                 evidence=[],
+                trace=trace,
             )
 
-        prompt = build_prompt(query=query, evidence=evidence)
-        answer = generate_answer(prompt=prompt, evidence=evidence)
-        total_ms = (perf_counter() - started_at) * 1000
+        with tracer.span("llm_mock", evidence_count=len(evidence)):
+            prompt = build_prompt(query=query, evidence=evidence)
+            answer = generate_answer(prompt=prompt, evidence=evidence)
+        trace = tracer.finish() if owns_tracer else tracer.to_trace_info()
         logger.info(
             "rag_stage trace_id=%s stage=answer evidence_count=%s latency_ms=%.2f",
             trace_id,
             len(evidence),
-            total_ms,
+            trace.total_latency_ms or 0.0,
         )
         return ChatResponse(
             answer=answer,
@@ -108,6 +122,7 @@ class RagPipeline:
             fallback=False,
             fallback_reason=None,
             trace_id=trace_id,
+            trace=trace,
         )
 
 
@@ -120,6 +135,7 @@ def run_chat(
     intent: str | None = None,
     route: str = "document_only",
     metadata_filter: Mapping[str, object] | None = None,
+    tracer: PerformanceTracer | None = None,
 ) -> ChatResponse:
     pipeline = RagPipeline.from_documents(documents)
     return pipeline.run_chat(
@@ -130,6 +146,7 @@ def run_chat(
         intent=intent,
         route=route,
         metadata_filter=metadata_filter,
+        tracer=tracer,
     )
 
 

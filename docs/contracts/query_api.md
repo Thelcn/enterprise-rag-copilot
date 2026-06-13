@@ -64,7 +64,12 @@ Accepts one user question in a session and returns a structured answer object.
   ],
   "fallback": false,
   "fallback_reason": null,
-  "trace_id": "trace_2ad8e0b78b5741a4a53a87b2d98ff3e6"
+  "trace_id": "trace_2ad8e0b78b5741a4a53a87b2d98ff3e6",
+  "trace": {
+    "trace_id": "trace_2ad8e0b78b5741a4a53a87b2d98ff3e6",
+    "total_latency_ms": 1.23,
+    "stages": []
+  }
 }
 ```
 
@@ -90,7 +95,12 @@ Response:
   "evidence": [],
   "fallback": true,
   "fallback_reason": "unknown_intent",
-  "trace_id": "trace_0eb3763a9cb54b74a3b52ae21fc844a3"
+  "trace_id": "trace_0eb3763a9cb54b74a3b52ae21fc844a3",
+  "trace": {
+    "trace_id": "trace_0eb3763a9cb54b74a3b52ae21fc844a3",
+    "total_latency_ms": 0.12,
+    "stages": []
+  }
 }
 ```
 
@@ -105,6 +115,7 @@ Response:
 | `fallback` | boolean | yes | Whether the system used a fallback path. |
 | `fallback_reason` | string or null | yes | Stable reason code when `fallback` is true. |
 | `trace_id` | string | yes | Request trace identifier. Week 1 generates a UUID-based value with a `trace_` prefix. |
+| `trace` | object or null | yes | Local trace summary with `total_latency_ms` and stage timings. |
 
 ### Evidence Object
 
@@ -157,10 +168,10 @@ Examples of invalid input:
 
 ## Current Boundary
 
-Day 5 runs a naive RAG v0 pipeline:
+Day 6 runs a hybrid RAG prototype with local evaluation and tracing:
 
 ```text
-query -> retrieve -> build_prompt -> generate_answer -> ChatResponse
+query -> route -> optional structured tool -> retrieve -> evidence -> fallback/answer -> trace -> ChatResponse
 ```
 
 The retriever uses a deterministic keyword fallback, not a semantic embedding
@@ -174,6 +185,9 @@ Current fallback reason examples include `unknown_intent`, `missing_order_id`,
 `missing_product_id`, `product_not_found`, `no_evidence`,
 `low_retrieval_score`, `hybrid_document_evidence_missing`,
 `hybrid_structured_evidence_missing`, and `high_risk_request`.
+
+Evaluation assets live in `evaluation/`, and local trace metrics are documented
+in `docs/performance.md`.
 
 ## Week 1 Verification
 

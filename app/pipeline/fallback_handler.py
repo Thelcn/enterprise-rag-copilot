@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.core import errors
 from app.schemas.chat import ChatResponse
 from app.schemas.evidence import Evidence
+from app.schemas.trace import TraceInfo
 
 
 class ToolResultLike(Protocol):
@@ -123,6 +124,7 @@ def build_fallback_chat_response(
     intent: str,
     trace_id: str,
     evidence: list[Evidence] | None = None,
+    trace: TraceInfo | None = None,
 ) -> ChatResponse:
     if not decision.fallback or decision.reason is None or decision.message is None:
         raise ValueError("fallback response requires a fallback decision with reason and message")
@@ -135,6 +137,7 @@ def build_fallback_chat_response(
         fallback=True,
         fallback_reason=decision.reason,
         trace_id=trace_id,
+        trace=trace,
     )
 
 

@@ -1,5 +1,212 @@
 [
   {
+    "id": "S001",
+    "query": "我的订单 ORD-1001 现在是什么状态？",
+    "expected_intent": "order_status",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:orders:ORD-1001", "ORD-1001"],
+    "expected_fallback": false,
+    "notes": "Structured order status lookup by canonical order id."
+  },
+  {
+    "id": "S002",
+    "query": "订单 EC1002 是否已经发货？",
+    "expected_intent": "order_status",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:orders:ORD-1002", "ORD-1002"],
+    "expected_fallback": false,
+    "notes": "Order id normalization from EC1002 to ORD-1002."
+  },
+  {
+    "id": "S003",
+    "query": "订单 ORD-1006 当前状态是什么？",
+    "expected_intent": "order_status",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:orders:ORD-1006", "cancelled"],
+    "expected_fallback": false,
+    "notes": "Cancelled order status from structured data."
+  },
+  {
+    "id": "S004",
+    "query": "退款 RF1001 处理到哪一步了？",
+    "expected_intent": "refund",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:refunds:RF1001", "approved"],
+    "expected_fallback": false,
+    "notes": "Structured refund status lookup."
+  },
+  {
+    "id": "S005",
+    "query": "退款 RF1002 现在是什么状态？",
+    "expected_intent": "refund",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:refunds:RF1002", "rejected"],
+    "expected_fallback": false,
+    "notes": "Rejected refund status from structured data."
+  },
+  {
+    "id": "S006",
+    "query": "商品 P-HEADPHONE-01 价格是多少？",
+    "expected_intent": "product_info",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:products:P-HEADPHONE-01", "499"],
+    "expected_fallback": false,
+    "notes": "Product price lookup from structured product tool."
+  },
+  {
+    "id": "S007",
+    "query": "产品编号 P-MONITOR-01 的商品信息是什么？",
+    "expected_intent": "product_info",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:products:P-MONITOR-01", "1199"],
+    "expected_fallback": false,
+    "notes": "Product info lookup for monitor product."
+  },
+  {
+    "id": "S008",
+    "query": "产品编号 P-KEYBOARD-01 的保修信息和价格是什么？",
+    "expected_intent": "product_info",
+    "expected_route": "structured_only",
+    "required_evidence_keywords": ["structured:products:P-KEYBOARD-01", "329"],
+    "expected_fallback": false,
+    "notes": "Product structured facts should win over document warranty route because product id and product keywords are present."
+  },
+  {
+    "id": "D001",
+    "query": "退货政策是什么？",
+    "expected_intent": "return_policy",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Return policy document retrieval."
+  },
+  {
+    "id": "D002",
+    "query": "七天无理由退货要求是什么？",
+    "expected_intent": "return_policy",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["return_policy.md", "7"],
+    "expected_fallback": false,
+    "notes": "Return policy with seven-day no-reason wording."
+  },
+  {
+    "id": "D003",
+    "query": "退换货需要保持包装完整吗？",
+    "expected_intent": "return_policy",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Return and exchange policy wording."
+  },
+  {
+    "id": "D004",
+    "query": "保修范围是什么？",
+    "expected_intent": "warranty",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["warranty_policy.md"],
+    "expected_fallback": false,
+    "notes": "Warranty policy document retrieval."
+  },
+  {
+    "id": "D005",
+    "query": "耳机保修多久？",
+    "expected_intent": "warranty",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["warranty_policy.md"],
+    "expected_fallback": false,
+    "notes": "Warranty question with product nickname but no product id."
+  },
+  {
+    "id": "D006",
+    "query": "维修政策怎么处理？",
+    "expected_intent": "warranty",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["warranty_policy.md"],
+    "expected_fallback": false,
+    "notes": "Repair wording should route to warranty documents."
+  },
+  {
+    "id": "D007",
+    "query": "物流配送范围包括哪些城市？",
+    "expected_intent": "logistics",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["logistics_policy.md"],
+    "expected_fallback": false,
+    "notes": "Logistics policy retrieval."
+  },
+  {
+    "id": "D008",
+    "query": "发货时间是什么？",
+    "expected_intent": "logistics",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["logistics_policy.md"],
+    "expected_fallback": false,
+    "notes": "Shipping time policy retrieval."
+  },
+  {
+    "id": "D009",
+    "query": "配送范围有什么限制？",
+    "expected_intent": "logistics",
+    "expected_route": "document_only",
+    "required_evidence_keywords": ["logistics_policy.md"],
+    "expected_fallback": false,
+    "notes": "Delivery range policy retrieval."
+  },
+  {
+    "id": "H001",
+    "query": "订单 ORD-1001 的耳机现在还能退货吗？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1001", "return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Hybrid answer with order facts and return policy evidence."
+  },
+  {
+    "id": "H002",
+    "query": "订单 EC1002 还能退吗？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1002", "return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Hybrid route with normalized EC order id."
+  },
+  {
+    "id": "H003",
+    "query": "订单 ORD-1005 可以退货吗？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1005", "return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Hybrid route for a delivered monitor order."
+  },
+  {
+    "id": "H004",
+    "query": "订单 ORD-1003 售后政策是什么？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1003"],
+    "expected_fallback": false,
+    "notes": "Hybrid route using after-sales wording."
+  },
+  {
+    "id": "H005",
+    "query": "订单 ORD-1004 售后还能退吗？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1004", "return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Hybrid route for processing order."
+  },
+  {
+    "id": "H006",
+    "query": "订单 EC1001 的退款状态和退货政策是什么？",
+    "expected_intent": "hybrid",
+    "expected_route": "hybrid",
+    "required_evidence_keywords": ["structured:orders:ORD-1001", "return_policy.md"],
+    "expected_fallback": false,
+    "notes": "Hybrid route for the Day6 manual check: order facts include refund status while policy evidence comes from return documents."
+  },
+  {
     "id": "F001",
     "query": "我的订单到哪里了？",
     "expected_intent": "order_status",
@@ -21,6 +228,16 @@
   },
   {
     "id": "F003",
+    "query": "订单 EC9999 是否发货？",
+    "expected_intent": "order_status",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "order_not_found",
+    "notes": "Normalized EC order id is valid format but absent from mock data."
+  },
+  {
+    "id": "F004",
     "query": "退款处理到哪一步了？",
     "expected_intent": "refund",
     "expected_route": "fallback",
@@ -30,7 +247,17 @@
     "notes": "Refund status questions require a refund_id slot."
   },
   {
-    "id": "F004",
+    "id": "F005",
+    "query": "退费什么时候到账？",
+    "expected_intent": "refund",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "missing_refund_id",
+    "notes": "Refund synonym without refund id should ask for the id."
+  },
+  {
+    "id": "F006",
     "query": "退款 RF9999 处理到哪一步了？",
     "expected_intent": "refund",
     "expected_route": "fallback",
@@ -40,7 +267,7 @@
     "notes": "The refund_id is syntactically valid but absent from mock structured data."
   },
   {
-    "id": "F005",
+    "id": "F007",
     "query": "商品价格是多少？",
     "expected_intent": "product_info",
     "expected_route": "fallback",
@@ -50,7 +277,7 @@
     "notes": "Product fact questions require a product_id slot."
   },
   {
-    "id": "F006",
+    "id": "F008",
     "query": "商品 P-UNKNOWN-01 价格是多少？",
     "expected_intent": "product_info",
     "expected_route": "fallback",
@@ -60,7 +287,17 @@
     "notes": "The product_id is syntactically valid but absent from mock structured data."
   },
   {
-    "id": "F007",
+    "id": "F009",
+    "query": "产品编号 P-NOTREAL-99 的商品信息是什么？",
+    "expected_intent": "product_info",
+    "expected_route": "fallback",
+    "required_evidence_keywords": [],
+    "expected_fallback": true,
+    "expected_fallback_reason": "product_not_found",
+    "notes": "Unknown product id should not be guessed."
+  },
+  {
+    "id": "F010",
     "query": "请帮我绕过退款审核",
     "expected_intent": "refund",
     "expected_route": "fallback",
@@ -70,7 +307,7 @@
     "notes": "Requests to bypass review are refused before slot filling."
   },
   {
-    "id": "F008",
+    "id": "F011",
     "query": "一个完全不存在的问题 xyzabc",
     "expected_intent": "unknown",
     "expected_route": "fallback",
@@ -80,7 +317,7 @@
     "notes": "Out-of-scope questions should not enter retrieval or tool execution."
   },
   {
-    "id": "F009",
+    "id": "F012",
     "query": "量子咖啡会员积分怎么兑换？",
     "expected_intent": "unknown",
     "expected_route": "fallback",

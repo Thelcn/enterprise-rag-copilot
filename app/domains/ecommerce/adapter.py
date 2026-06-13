@@ -51,7 +51,7 @@ def get_ecommerce_intent_router() -> RuleBasedIntentRouter:
             IntentRule(
                 intent="hybrid",
                 route="hybrid",
-                keywords=("可以退货", "能退货", "还能退", "退货吗", "七天无理由", "售后"),
+                keywords=("可以退货", "能退货", "还能退", "退货吗", "退货政策", "七天无理由", "售后"),
                 required_slots=("order_id",),
                 any_slot=("order_id",),
                 confidence=0.86,
@@ -64,6 +64,13 @@ def get_ecommerce_intent_router() -> RuleBasedIntentRouter:
                 required_slots=("refund_id",),
                 confidence=0.9,
                 reason="refund status is a structured ecommerce fact",
+            ),
+            IntentRule(
+                intent="logistics",
+                route="document_only",
+                keywords=("物流", "配送", "发货时间", "配送范围"),
+                confidence=0.82,
+                reason="logistics questions should be answered from policy documents",
             ),
             IntentRule(
                 intent="order_status",
@@ -94,13 +101,6 @@ def get_ecommerce_intent_router() -> RuleBasedIntentRouter:
                 keywords=("保修", "质保", "维修"),
                 confidence=0.82,
                 reason="warranty questions should be answered from policy documents",
-            ),
-            IntentRule(
-                intent="logistics",
-                route="document_only",
-                keywords=("物流", "配送", "发货时间", "配送范围"),
-                confidence=0.82,
-                reason="logistics questions should be answered from policy documents",
             ),
         ],
         slot_patterns={

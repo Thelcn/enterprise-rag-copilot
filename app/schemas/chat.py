@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.evidence import Evidence
+from app.schemas.trace import TraceInfo
 
 
 RouteName = Literal["structured_only", "document_only", "hybrid", "fallback"]
@@ -38,3 +39,4 @@ class ChatResponse(BaseModel):
     fallback: bool
     fallback_reason: str | None = None
     trace_id: str
+    trace: TraceInfo | None = None

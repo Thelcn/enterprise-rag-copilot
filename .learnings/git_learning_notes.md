@@ -2485,3 +2485,253 @@ Day5 把 fallback reason 从分散字符串收口成稳定 code。
 Day5 虽然新增了 handler，但也移动了原来散落在 `routes.py` 和 `rag_pipeline.py` 的 fallback 逻辑。
 
 这类“行为应该保持一致但结构变化很大”的改动，最需要提交前跑全量测试。
+
+---
+
+# Week2 Day6 Git 学习记录：提交 Evaluation Runner 与 Performance Tracing
+
+## 本次 Git 操作背景
+
+Week2 Day6 完成的是本地 evaluation runner 和 performance tracing。
+
+本次准备提交的主要内容：
+
+- `app/schemas/trace.py`：扩展 `TraceInfo`，新增 `TraceStage`、`total_latency_ms` 和阶段列表。
+- `app/schemas/chat.py`：`ChatResponse` 新增可选 `trace` 字段。
+- `app/pipeline/performance_tracer.py`：新增轻量 stage timing helper。
+- `app/api/routes.py`、`app/pipeline/rag_pipeline.py`：接入 intent、tool、retrieval、rerank_mock、llm_mock、fallback、total latency tracing。
+- `app/schemas/evaluation.py`：定义 evaluation case/result/metrics/report schema。
+- `evaluation/ecommerce_cases.json`：扩展到 35 条本地 ecommerce cases。
+- `evaluation/run_eval.py`、`evaluation/metrics.py`：实现本地评估 runner 和 metrics 计算。
+- `docs/evaluation.md`、`docs/performance.md`：说明评估集、指标、运行方式、trace 语义和局限。
+- `tests/test_performance_tracer.py`、`tests/test_evaluation_metrics.py`：新增测试。
+- `.learnings/week2_day6_evaluation_tracing_learning_notes.md`：Day6 学习笔记。
+- `.learnings/ERRORS.md`：记录 evaluation 暴露出来的两个 intent router 问题。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+确认 Day6 修改、新增了哪些文件。
+
+本次新增的重点文件包括：
+
+```text
+app/pipeline/performance_tracer.py
+app/schemas/evaluation.py
+evaluation/metrics.py
+evaluation/run_eval.py
+docs/evaluation.md
+docs/performance.md
+tests/test_evaluation_metrics.py
+tests/test_performance_tracer.py
+.learnings/week2_day6_evaluation_tracing_learning_notes.md
+```
+
+### 2. 查看变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+作用：
+
+快速确认 Day6 的改动规模和主要范围。
+
+Day6 改动横跨 schema、pipeline、routes、evaluation、docs 和 tests，所以提交前必须重点检查新增文件是否都属于当天任务。
+
+### 3. 运行全量测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认新增 `trace` 字段和 evaluation/tracing 逻辑没有破坏旧 API 契约、intent router、RAG pipeline、fallback handler 等已有能力。
+
+本次结果：
+
+```text
+79 passed
+```
+
+仍然看到两个已知 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响提交。
+
+### 4. 运行 evaluation runner
+
+执行命令：
+
+```powershell
+python -m evaluation.run_eval --cases evaluation\ecommerce_cases.json --out evaluation\eval_report.json --markdown-out evaluation\eval_report.md
+```
+
+作用：
+
+确认 35 条本地 ecommerce evaluation cases 都能跑通，并输出 metrics。
+
+本次结果：
+
+```text
+35 cases
+35 passed
+error_count=0
+```
+
+学习点：
+
+`evaluation/eval_report.json` 和 `evaluation/eval_report.md` 是本地运行产物，包含每次都会变化的 latency 数字，所以它们被 `.gitignore` 排除，不进入 commit。
+
+### 5. 检查被忽略文件
+
+执行命令：
+
+```powershell
+git status --ignored --short evaluation
+```
+
+作用：
+
+确认 evaluation runner 生成的报告文件和 Python cache 不会被提交。
+
+本次看到：
+
+```text
+!! evaluation/__pycache__/
+!! evaluation/eval_report.json
+!! evaluation/eval_report.md
+```
+
+`!!` 表示这些文件被 Git ignore 规则忽略。
+
+### 6. 更新 Git 学习文档
+
+编辑：
+
+```text
+.learnings/git_learning_notes.md
+```
+
+作用：
+
+把 Day6 提交流程和学习点写进 Git 学习文档，并与 Day6 代码一起提交。
+
+### 7. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把 Day6 的代码、测试、文档、evaluation cases、学习笔记和错误记录加入暂存区。
+
+### 8. 检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：
+
+提交前最后确认有哪些文件会进入 commit，尤其确认被 ignore 的 eval report 没有进入暂存区。
+
+### 9. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: add evaluation runner and performance tracing"
+```
+
+commit message 含义：
+
+- `feat`：这次新增了可运行的评估和追踪能力。
+- `add evaluation runner and performance tracing`：说明核心内容是 evaluation runner 与 performance tracer。
+
+### 10. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把 Day6 commit 推送到 GitHub 远程仓库。
+
+### 11. 推送后检查
+
+执行命令：
+
+```powershell
+git status --short
+git log --oneline --decorate -n 5
+```
+
+作用：
+
+确认工作区干净，并确认本地 `main` 和远程 `origin/main` 都指向 Day6 commit。
+
+## 本次 Git 学习点
+
+### 运行产物不一定要提交
+
+Day6 的 runner 会生成：
+
+```text
+evaluation/eval_report.json
+evaluation/eval_report.md
+```
+
+它们很有用，但属于本地实验结果。因为 latency 会随机器和运行时刻变化，所以不适合作为稳定源码提交。
+
+更好的做法是：
+
+- 提交 runner
+- 提交 cases
+- 提交 docs
+- 忽略本地 report
+- 在对话或总结里报告本次运行结果
+
+### `git status --ignored` 可以检查 ignore 是否生效
+
+平时 `git status --short` 看不到被忽略文件。
+
+如果你想确认某个目录里的报告、cache、临时文件是否真的被 ignore，可以用：
+
+```powershell
+git status --ignored --short evaluation
+```
+
+看到 `!!` 就说明 ignore 生效。
+
+### Evaluation 失败可以反哺代码
+
+Day6 runner 一开始暴露了 `发货时间是什么？` 被误路由到 `order_status`。
+
+这说明 evaluation 不是为了写漂亮指标，而是为了发现系统真实边界问题。
+
+修复后，相关测试和 evaluation case 也一起更新，形成可回归的保护。

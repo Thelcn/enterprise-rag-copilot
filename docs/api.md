@@ -72,7 +72,18 @@ Field meanings:
   ],
   "fallback": false,
   "fallback_reason": null,
-  "trace_id": "trace_..."
+  "trace_id": "trace_...",
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 1.23,
+    "stages": [
+      {
+        "name": "intent",
+        "latency_ms": 0.04,
+        "metadata": {}
+      }
+    ]
+  }
 }
 ```
 
@@ -99,6 +110,8 @@ Current field meanings:
 - `fallback_reason`: stable fallback reason code, or `null` when the answer is
   supported.
 - `trace_id`: request trace identifier for logs and debugging.
+- `trace`: local performance trace with stage timings. It is for development
+  and evaluation, not a production performance claim.
 
 ### Current Fallback Response
 
@@ -110,7 +123,25 @@ Current field meanings:
   "evidence": [],
   "fallback": true,
   "fallback_reason": "unknown_intent",
-  "trace_id": "trace_..."
+  "trace_id": "trace_...",
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 0.12,
+    "stages": [
+      {
+        "name": "intent",
+        "latency_ms": 0.03,
+        "metadata": {}
+      },
+      {
+        "name": "fallback",
+        "latency_ms": 0.01,
+        "metadata": {
+          "reason": "unknown_intent"
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -159,7 +190,26 @@ Example response shape:
   ],
   "fallback": false,
   "fallback_reason": null,
-  "trace_id": "trace_..."
+  "trace_id": "trace_...",
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 0.2,
+    "stages": [
+      {
+        "name": "intent",
+        "latency_ms": 0.03,
+        "metadata": {}
+      },
+      {
+        "name": "tool",
+        "latency_ms": 0.05,
+        "metadata": {
+          "intent": "order_status",
+          "tool_name": "get_order_status"
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -189,7 +239,11 @@ introduced. The target shape is:
   "fallback": false,
   "fallback_reason": null,
   "trace_id": "trace_...",
-  "trace": null
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 1.23,
+    "stages": []
+  }
 }
 ```
 

@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 pytest-cache-files-*/
+evaluation/eval_report*.json
+evaluation/eval_report*.md
 
 # Virtual environments
 .venv/

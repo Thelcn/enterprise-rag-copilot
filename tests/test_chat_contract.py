@@ -27,6 +27,7 @@ def test_chat_returns_stable_contract() -> None:
         "fallback",
         "fallback_reason",
         "trace_id",
+        "trace",
     }
     assert payload["answer"]
     assert isinstance(payload["intent"], str)
@@ -34,6 +35,9 @@ def test_chat_returns_stable_contract() -> None:
     assert isinstance(payload["evidence"], list)
     assert isinstance(payload["fallback"], bool)
     assert payload["trace_id"].startswith("trace_")
+    assert payload["trace"]["trace_id"] == payload["trace_id"]
+    assert payload["trace"]["total_latency_ms"] >= 0
+    assert isinstance(payload["trace"]["stages"], list)
 
 
 def test_chat_strips_whitespace_from_query() -> None:

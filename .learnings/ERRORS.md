@@ -98,6 +98,74 @@ Updated the RAG pipeline test to expect `errors.LOW_RETRIEVAL_SCORE` and changed
 
 ---
 
+## [ERR-20260613-003] evaluation_case_exposed_intent_priority_bug
+
+**Logged**: 2026-06-13T15:22:00+08:00
+**Priority**: medium
+**Status**: handled
+**Area**: tests
+
+### Summary
+Week2 Day6 evaluation case `D008` expected a shipping-time policy question to route to `logistics`, but the intent router matched the broader order-status rule first and returned `missing_order_id`.
+
+### Error
+```text
+case_id=D008
+query=发货时间是什么？
+expected=(logistics, document_only, fallback=false)
+actual=(order_status, fallback, fallback=true, fallback_reason=missing_order_id)
+```
+
+### Context
+- Command attempted: `python -m evaluation.run_eval --cases evaluation\ecommerce_cases.json --out evaluation\eval_report.json --markdown-out evaluation\eval_report.md`
+- Cause: `order_status` included the broad keyword `发货`, while `logistics` included the more specific keyword `发货时间`. The broader rule was evaluated first.
+
+### Suggested Fix
+Put the more specific logistics rule before the broad order-status rule, then add a focused intent-router test for `发货时间是什么？`.
+
+### Resolution
+Moved the logistics `IntentRule` above `order_status` in `app/domains/ecommerce/adapter.py` and added `test_router_prefers_logistics_policy_for_shipping_time_question`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: app/domains/ecommerce/adapter.py, tests/test_intent_router.py, evaluation/ecommerce_cases.json
+
+---
+
+## [ERR-20260613-004] manual_hybrid_query_routed_to_refund
+
+**Logged**: 2026-06-13T15:28:00+08:00
+**Priority**: medium
+**Status**: handled
+**Area**: backend
+
+### Summary
+The Day6 manual hybrid query `订单 EC1001 的退款状态和退货政策是什么？` routed to `refund` and fell back with `missing_refund_id` instead of using the order id plus return-policy evidence.
+
+### Error
+```text
+query=订单 EC1001 的退款状态和退货政策是什么？
+actual_intent=refund
+actual_route=fallback
+fallback_reason=missing_refund_id
+```
+
+### Context
+- Command attempted: manual `curl.exe` check against local `/chat`.
+- Cause: the hybrid rule did not include `退货政策`, so the refund rule matched `退款状态` first.
+
+### Suggested Fix
+Include `退货政策` in the hybrid rule when an order id is present, then add both router and evaluation coverage for the manual Day6 query.
+
+### Resolution
+Added `退货政策` to the hybrid intent keywords, added a focused router test, and added evaluation case `H006`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: app/domains/ecommerce/adapter.py, tests/test_intent_router.py, evaluation/ecommerce_cases.json
+
+---
+
 ## [ERR-20260611-001] metadata_filtering_test_assumption
 
 **Logged**: 2026-06-11T19:00:00+08:00

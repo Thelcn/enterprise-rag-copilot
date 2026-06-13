@@ -14,9 +14,9 @@ from app.domains.ecommerce.schema import ToolResult
 from app.pipeline.evidence_builder import build_evidence
 from app.pipeline.fallback_handler import build_fallback_chat_response, should_fallback
 from app.pipeline.intent_router import RouteDecision
+from app.pipeline.performance_tracer import PerformanceTracer
 from app.pipeline.rag_pipeline import RagPipeline
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.trace import new_trace_id
 
 
 router = APIRouter()
@@ -35,7 +35,10 @@ def health_check() -> dict[str, str]:
 # /chat 路由
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    decision = get_ecommerce_intent_router().route(request.query)
+    tracer = PerformanceTracer()
+    with tracer.span("intent"):
+        decision = get_ecommerce_intent_router().route(request.query)
+
     fallback_decision = should_fallback(
         query=request.query,
         intent=decision.intent,
@@ -44,27 +47,36 @@ def chat(request: ChatRequest) -> ChatResponse:
         slots=decision.slots,
     )
     if fallback_decision.fallback:
-        return build_fallback_chat_response(
-            decision=fallback_decision,
-            intent=decision.intent,
-            trace_id=new_trace_id(),
-        )
+        with tracer.span("fallback", reason=fallback_decision.reason):
+            response = build_fallback_chat_response(
+                decision=fallback_decision,
+                intent=decision.intent,
+                trace_id=tracer.trace_id,
+            )
+        return _complete_response(response=response, tracer=tracer)
 
     if decision.route == "structured_only":
-        return _run_structured_chat(decision)
+        return _run_structured_chat(decision=decision, tracer=tracer)
 
     pipeline = get_chat_pipeline()
     if decision.route == "hybrid":
-        return _run_hybrid_chat(request=request, decision=decision, pipeline=pipeline)
+        return _run_hybrid_chat(
+            request=request,
+            decision=decision,
+            pipeline=pipeline,
+            tracer=tracer,
+        )
 
-    return pipeline.run_chat(
+    response = pipeline.run_chat(
         query=request.query,
         user_id=request.user_id,
         session_id=request.session_id,
         intent=decision.intent,
         route=decision.route,
         metadata_filter=get_ecommerce_metadata_filter(decision.intent),
+        tracer=tracer,
     )
+    return _complete_response(response=response, tracer=tracer)
 
 
 @lru_cache
@@ -73,19 +85,32 @@ def get_chat_pipeline() -> RagPipeline:
     return RagPipeline.from_documents(documents, chunk_size=220, overlap=20)
 
 
-def _run_structured_chat(decision: RouteDecision) -> ChatResponse:
-    result = _run_tool_for_decision(decision)
-    return _tool_result_to_chat_response(result=result, decision=decision)
+def _run_structured_chat(decision: RouteDecision, tracer: PerformanceTracer) -> ChatResponse:
+    with tracer.span("tool", intent=decision.intent, tool_name=_tool_name_for_decision(decision)):
+        result = _run_tool_for_decision(decision)
+    response = _tool_result_to_chat_response(
+        result=result,
+        decision=decision,
+        trace_id=tracer.trace_id,
+    )
+    return _complete_response(response=response, tracer=tracer)
 
 
 def _run_hybrid_chat(
     request: ChatRequest,
     decision: RouteDecision,
     pipeline: RagPipeline,
+    tracer: PerformanceTracer,
 ) -> ChatResponse:
-    order_result = get_ecommerce_tools().get_order_status(decision.slots.get("order_id"))
+    with tracer.span("tool", intent=decision.intent, tool_name="get_order_status"):
+        order_result = get_ecommerce_tools().get_order_status(decision.slots.get("order_id"))
     if not order_result.success:
-        return _tool_result_to_chat_response(result=order_result, decision=decision)
+        response = _tool_result_to_chat_response(
+            result=order_result,
+            decision=decision,
+            trace_id=tracer.trace_id,
+        )
+        return _complete_response(response=response, tracer=tracer)
 
     document_response = pipeline.run_chat(
         query=request.query,
@@ -94,6 +119,7 @@ def _run_hybrid_chat(
         intent=decision.intent,
         route="hybrid",
         metadata_filter=get_ecommerce_metadata_filter(decision.intent),
+        tracer=tracer,
     )
     structured_evidence = build_evidence(tool_results=[order_result])
     if document_response.fallback:
@@ -104,12 +130,13 @@ def _run_hybrid_chat(
             evidence=structured_evidence,
             tool_results=[order_result],
         )
-        return build_fallback_chat_response(
+        response = build_fallback_chat_response(
             decision=fallback_decision,
             intent=decision.intent,
             trace_id=document_response.trace_id,
             evidence=structured_evidence,
         )
+        return _complete_response(response=response, tracer=tracer)
 
     evidence = build_evidence(
         tool_results=[order_result],
@@ -123,14 +150,15 @@ def _run_hybrid_chat(
         tool_results=[order_result],
     )
     if fallback_decision.fallback:
-        return build_fallback_chat_response(
+        response = build_fallback_chat_response(
             decision=fallback_decision,
             intent=decision.intent,
             trace_id=document_response.trace_id,
             evidence=evidence,
         )
+        return _complete_response(response=response, tracer=tracer)
 
-    return ChatResponse(
+    response = ChatResponse(
         answer=f"{order_result.message} 同时参考政策证据：{document_response.answer}",
         intent=decision.intent,
         route="hybrid",
@@ -139,6 +167,7 @@ def _run_hybrid_chat(
         fallback_reason=None,
         trace_id=document_response.trace_id,
     )
+    return _complete_response(response=response, tracer=tracer)
 
 
 def _run_tool_for_decision(decision: RouteDecision) -> ToolResult:
@@ -157,8 +186,11 @@ def _run_tool_for_decision(decision: RouteDecision) -> ToolResult:
     )
 
 
-def _tool_result_to_chat_response(result: ToolResult, decision: RouteDecision) -> ChatResponse:
-    trace_id = new_trace_id()
+def _tool_result_to_chat_response(
+    result: ToolResult,
+    decision: RouteDecision,
+    trace_id: str,
+) -> ChatResponse:
     evidence = build_evidence(tool_results=[result])
     fallback_decision = should_fallback(
         query="",
@@ -184,3 +216,18 @@ def _tool_result_to_chat_response(result: ToolResult, decision: RouteDecision) -
         fallback_reason=None,
         trace_id=trace_id,
     )
+
+
+def _tool_name_for_decision(decision: RouteDecision) -> str:
+    if decision.intent == "order_status":
+        return "get_order_status"
+    if decision.intent == "refund":
+        return "get_refund_status"
+    if decision.intent == "product_info":
+        return "get_product_info"
+    return "unknown_structured_tool"
+
+
+def _complete_response(response: ChatResponse, tracer: PerformanceTracer) -> ChatResponse:
+    response.trace = tracer.finish()
+    return response

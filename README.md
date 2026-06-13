@@ -38,6 +38,12 @@ Run tests:
 python -m pytest -q
 ```
 
+Run local evaluation:
+
+```powershell
+python -m evaluation.run_eval --cases evaluation/ecommerce_cases.json --out evaluation/eval_report.json --markdown-out evaluation/eval_report.md
+```
+
 Docker:
 
 ```powershell
@@ -91,7 +97,12 @@ Example response shape:
   ],
   "fallback": false,
   "fallback_reason": null,
-  "trace_id": "trace_..."
+  "trace_id": "trace_...",
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 1.23,
+    "stages": []
+  }
 }
 ```
 
@@ -109,7 +120,12 @@ curl.exe -s -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/jso
   "evidence": [],
   "fallback": true,
   "fallback_reason": "unknown_intent",
-  "trace_id": "trace_..."
+  "trace_id": "trace_...",
+  "trace": {
+    "trace_id": "trace_...",
+    "total_latency_ms": 0.12,
+    "stages": []
+  }
 }
 ```
 
@@ -138,6 +154,7 @@ app/
     evidence_builder.py
     fallback_handler.py
     intent_router.py
+    performance_tracer.py
     vector_store.py
     retriever.py
     prompt_builder.py
@@ -147,13 +164,17 @@ app/
     chat.py
     document.py
     evidence.py
+    evaluation.py
     trace.py
 data/
   ecommerce/
     docs/
     mock/
 evaluation/
+  __init__.py
   ecommerce_cases.json
+  metrics.py
+  run_eval.py
 docs/
   contracts/
   design/
@@ -164,6 +185,7 @@ tests/
   test_chat_contract.py
   test_document_loader.py
   test_ecommerce_tools.py
+  test_evaluation_metrics.py
   test_evidence_builder.py
   test_fallback_handler.py
   test_intent_router.py
@@ -171,6 +193,7 @@ tests/
   test_metadata_rules.py
   test_retriever.py
   test_rag_pipeline.py
+  test_performance_tracer.py
   test_week1_baseline.py
   test_week2_chat_routes.py
 ```
@@ -236,12 +259,17 @@ Observed behavior:
 - Week 2 Day 5 centralizes fallback decisions and returns stable reason codes
   such as `missing_order_id`, `order_not_found`, `no_evidence`, and
   `high_risk_request`.
+- Week 2 Day 6 adds local evaluation and performance tracing. Metrics from
+  `evaluation/run_eval.py` describe the mock ecommerce case set, not production
+  quality or production latency.
 
 ## Documentation
 
 - API contract: `docs/contracts/query_api.md`
 - Architecture: `docs/design/architecture.md`
 - AI workflow: `docs/ai-development-workflow.md`
+- Evaluation: `docs/evaluation.md`
+- Performance tracing: `docs/performance.md`
 - RAG v0 failure cases: `docs/failure_cases.md`
 - Week 1 summary: `notes/week1_summary.md`
 - Failure log: `notes/failure_log.md`
