@@ -237,3 +237,33 @@ a minimal hybrid prototype rather than a complete eligibility decision engine.
 
 Day 4 should normalize structured and document evidence through an evidence
 builder. Day 5 should centralize fallback semantics for partial hybrid answers.
+
+## 10. Metadata Filters Can Be Too Strict Or Too Loose
+
+### Example
+
+Query:
+
+```text
+耳机保修多久？
+```
+
+### Current Behavior
+
+Week 2 Day 3 routes this as `warranty` and applies
+`document_type=warranty_policy`, which correctly prioritizes
+`warranty_policy.md`. If the system applied the wrong filter, retrieval might
+either return an empty list or retrieve a semantically weak chunk that happens
+to share Chinese characters with the query.
+
+### Impact
+
+Metadata filtering reduces broad mis-recall, but it does not replace ranking,
+slot filling, or evaluation. A wrong or overly broad metadata rule can still
+produce weak evidence.
+
+### Week 2 Improvement
+
+Keep metadata rules centralized in `domains/ecommerce/metadata_rules.py`, add
+evaluation cases for filter misses, and use Day 4 evidence builder plus Day 5
+fallback handler to make partial evidence safer.

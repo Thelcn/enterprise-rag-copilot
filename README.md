@@ -79,7 +79,12 @@ Example response shape:
     {
       "source": "return_policy.md",
       "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
-      "score": 0.2459
+      "score": 0.2459,
+      "metadata": {
+        "document_type": "return_policy",
+        "policy_version": "ecommerce-policy-2026-06",
+        "applicable_scenario": "return_request"
+      }
     }
   ],
   "fallback": false,
@@ -119,6 +124,7 @@ app/
   domains/
     ecommerce/
       adapter.py
+      metadata_rules.py
       repository.py
       schema.py
       tools.py
@@ -144,12 +150,16 @@ data/
 docs/
   contracts/
   design/
+scripts/
+  build_index.py
 tests/
   test_health.py
   test_chat_contract.py
   test_document_loader.py
   test_ecommerce_tools.py
   test_intent_router.py
+  test_metadata_filtering.py
+  test_metadata_rules.py
   test_retriever.py
   test_rag_pipeline.py
   test_week1_baseline.py

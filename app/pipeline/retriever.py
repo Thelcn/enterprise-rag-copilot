@@ -1,6 +1,8 @@
 from app.pipeline.chunker import split_documents
 from app.pipeline.embedder import KeywordEmbedder
 from app.pipeline.vector_store import InMemoryIndex, build_index
+from collections.abc import Mapping
+
 from app.schemas.document import Chunk, Document
 from app.schemas.evidence import Evidence
 
@@ -28,20 +30,41 @@ class KeywordRetriever:
     ) -> "KeywordRetriever":
         return cls(index=build_index(chunks, embedder=embedder))
 
-    def retrieve(self, query: str, top_k: int = 3) -> list[Evidence]:
-        return retrieve(query=query, index=self.index, top_k=top_k)
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 3,
+        metadata_filter: Mapping[str, object] | None = None,
+        allow_filter_fallback: bool = True,
+    ) -> list[Evidence]:
+        return retrieve(
+            query=query,
+            index=self.index,
+            top_k=top_k,
+            metadata_filter=metadata_filter,
+            allow_filter_fallback=allow_filter_fallback,
+        )
 
 
-def retrieve(query: str, index: InMemoryIndex, top_k: int = 3) -> list[Evidence]:
+def retrieve(
+    query: str,
+    index: InMemoryIndex,
+    top_k: int = 3,
+    metadata_filter: Mapping[str, object] | None = None,
+    allow_filter_fallback: bool = True,
+) -> list[Evidence]:
     if not query.strip():
         return []
 
-    results = index.search(query=query, top_k=top_k)
+    results = index.search(query=query, top_k=top_k, metadata_filter=metadata_filter)
+    if metadata_filter and not results and allow_filter_fallback:
+        results = index.search(query=query, top_k=top_k)
     return [
         Evidence(
             source=result.chunk.source,
             content=result.chunk.content,
             score=result.score,
+            metadata=result.chunk.metadata,
         )
         for result in results
     ]

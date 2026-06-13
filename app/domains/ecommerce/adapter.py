@@ -11,6 +11,10 @@ from app.domains.ecommerce.repository import (
     normalize_product_id,
     normalize_refund_id,
 )
+from app.domains.ecommerce.metadata_rules import (
+    metadata_filter_for_intent,
+    metadata_for_policy_document,
+)
 from app.domains.ecommerce.tools import EcommerceTools
 
 
@@ -27,7 +31,7 @@ def get_policy_doc_paths(data_dir: str | Path = DEFAULT_ECOMMERCE_DOCS_DIR) -> l
 
 
 def load_ecommerce_documents(data_dir: str | Path = DEFAULT_ECOMMERCE_DOCS_DIR) -> list[Document]:
-    return load_markdown_documents(data_dir)
+    return load_markdown_documents(data_dir, metadata_provider=metadata_for_policy_document)
 
 
 @lru_cache
@@ -116,3 +120,7 @@ def get_ecommerce_intent_router() -> RuleBasedIntentRouter:
             "product_id": normalize_product_id,
         },
     )
+
+
+def get_ecommerce_metadata_filter(intent: str) -> dict[str, object] | None:
+    return metadata_filter_for_intent(intent)

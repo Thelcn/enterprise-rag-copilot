@@ -1,4 +1,5 @@
 from time import perf_counter
+from collections.abc import Mapping
 
 from app.core.logging_config import get_logger
 from app.pipeline.answer_generator import generate_answer
@@ -42,13 +43,18 @@ class RagPipeline:
         top_k: int = 3,
         intent: str | None = None,
         route: str = "document_only",
+        metadata_filter: Mapping[str, object] | None = None,
     ) -> ChatResponse:
         started_at = perf_counter()
         trace_id = new_trace_id()
         logger.info("rag_stage trace_id=%s stage=start top_k=%s", trace_id, top_k)
 
         retrieval_started_at = perf_counter()
-        evidence = self.retriever.retrieve(query, top_k=top_k)
+        evidence = self.retriever.retrieve(
+            query,
+            top_k=top_k,
+            metadata_filter=metadata_filter,
+        )
         evidence = _filter_evidence_by_score(evidence, min_score=self.min_score)
         retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
         logger.info(
@@ -103,6 +109,7 @@ def run_chat(
     top_k: int = 3,
     intent: str | None = None,
     route: str = "document_only",
+    metadata_filter: Mapping[str, object] | None = None,
 ) -> ChatResponse:
     pipeline = RagPipeline.from_documents(documents)
     return pipeline.run_chat(
@@ -112,6 +119,7 @@ def run_chat(
         top_k=top_k,
         intent=intent,
         route=route,
+        metadata_filter=metadata_filter,
     )
 
 

@@ -1927,3 +1927,188 @@ python -m pytest -q
 ```
 
 `44 passed` 说明 Day2 新功能和 Week1 基线目前可以共存。
+
+---
+
+# Week2 Day3 Git 学习记录：提交 Metadata Rules 与 Metadata-Aware Retrieval
+
+## 本次 Git 操作背景
+
+Week2 Day3 完成的是 metadata-aware retrieval。
+
+本次准备提交的主要内容：
+
+- `app/domains/ecommerce/metadata_rules.py`：集中定义电商 policy document metadata 和 intent -> metadata_filter 规则。
+- `app/pipeline/document_loader.py`：支持传入 `metadata_provider`。
+- `app/pipeline/vector_store.py`：支持按 metadata filter 搜索 chunk。
+- `app/pipeline/retriever.py`：支持 `metadata_filter` 和过滤无结果时的放宽检索。
+- `app/pipeline/rag_pipeline.py` 与 `app/api/routes.py`：让 `/chat` 文档路径可以带 metadata filter。
+- `app/schemas/evidence.py`：Evidence 新增 `metadata` 字段。
+- `data/ecommerce/docs/*.md`：补充政策版本、文档类型、适用场景和示例问题。
+- `scripts/build_index.py`：最小 index 构建验证脚本。
+- `tests/test_metadata_rules.py`、`tests/test_metadata_filtering.py`：新增 metadata 规则和过滤测试。
+- `.learnings/week2_day3_metadata_filtering_learning_notes.md`：Day3 学习笔记。
+- `.learnings/ERRORS.md`：记录一次 metadata filtering 测试假设错误。
+
+## 本次使用的命令
+
+### 1. 查看工作区状态
+
+执行命令：
+
+```powershell
+git status --short
+```
+
+作用：
+
+确认 Day3 修改了哪些文件，以及有没有新增文件还没有被 Git 跟踪。
+
+这次特别要注意新增的：
+
+```text
+app/domains/ecommerce/metadata_rules.py
+scripts/build_index.py
+tests/test_metadata_filtering.py
+tests/test_metadata_rules.py
+.learnings/week2_day3_metadata_filtering_learning_notes.md
+```
+
+### 2. 查看最近提交
+
+执行命令：
+
+```powershell
+git log --oneline -5
+```
+
+作用：
+
+确认当前最新提交是 Week2 Day2：
+
+```text
+1449eab feat: add ecommerce structured tools and intent router
+```
+
+说明本次应该创建 Week2 Day3 commit。
+
+### 3. 查看变更统计
+
+执行命令：
+
+```powershell
+git diff --stat
+```
+
+作用：
+
+快速查看 Day3 改动范围。
+
+这次会看到 loader、retriever、vector store、Evidence schema、政策文档、测试和学习笔记都有变化。
+
+### 4. 提交前运行测试
+
+执行命令：
+
+```powershell
+python -m pytest -q
+```
+
+作用：
+
+确认 metadata filtering 没有破坏 Day1 baseline、Day2 structured tools 或现有 `/chat` 契约。
+
+本次结果：
+
+```text
+55 passed
+```
+
+仍然看到两个已知 warning：
+
+- `StarletteDeprecationWarning`
+- `PytestCacheWarning`
+
+它们不影响提交。
+
+### 5. 暂存文件
+
+执行命令：
+
+```powershell
+git add .
+```
+
+作用：
+
+把 Day3 的代码、文档、测试、脚本、学习笔记和错误记录都放入暂存区。
+
+### 6. 检查暂存区
+
+执行命令：
+
+```powershell
+git diff --cached --name-only
+```
+
+作用：
+
+确认新增文件没有漏掉，尤其是 `scripts/build_index.py` 和 `.learnings/week2_day3...md`。
+
+### 7. 创建 commit
+
+执行命令：
+
+```powershell
+git commit -m "feat: support ecommerce metadata-aware retrieval"
+```
+
+commit message 含义：
+
+- `feat`：这次新增了 metadata-aware retrieval 能力。
+- `support ecommerce metadata-aware retrieval`：说明系统现在可以用电商 metadata rules 约束检索范围。
+
+### 8. 推送到 GitHub
+
+执行命令：
+
+```powershell
+git push
+```
+
+作用：
+
+把 Day3 commit 推送到 GitHub 远程仓库。
+
+## 本次 Git 学习点
+
+### 新增脚本也要确认是否进暂存区
+
+Day3 新增了 `scripts/build_index.py`。
+
+`git status --short` 只显示 `?? scripts/`，如果不检查暂存区文件名，可能不知道目录里具体有哪些文件。
+
+所以提交前看：
+
+```powershell
+git diff --cached --name-only
+```
+
+很重要。
+
+### `.learnings/ERRORS.md` 也属于本次提交上下文
+
+Day3 有一次测试假设错误：以为错误的 document_type 一定返回空，但 keyword fallback 可能因为中文单字 token 仍然命中弱相关 chunk。
+
+这个错误和本次 metadata filtering 功能直接相关，所以应该和 Day3 commit 一起提交。
+
+### 功能提交要带测试和文档
+
+这次 commit 不只是代码：
+
+- 代码实现 metadata-aware retrieval
+- 测试覆盖 metadata rules 和 filtering
+- 文档更新 API evidence metadata
+- 学习笔记解释实现方式
+
+这类提交比只提交代码更容易 review，也更适合之后面试复盘。

@@ -32,6 +32,43 @@ Running `.venv\Scripts\python.exe -m ensurepip --upgrade --default-pip` reproduc
 
 ---
 
+## [ERR-20260611-001] metadata_filtering_test_assumption
+
+**Logged**: 2026-06-11T19:00:00+08:00
+**Priority**: low
+**Status**: handled
+**Area**: tests
+
+### Summary
+Week2 Day3 metadata filtering tests assumed a semantically wrong document type would return no evidence, but the keyword retriever can still match shared Chinese characters.
+
+### Error
+```text
+FAILED tests/test_metadata_filtering.py::test_metadata_filter_can_return_empty_without_crashing
+AssertionError: assert [Evidence(source='return_policy.md', ...)] == []
+
+FAILED tests/test_metadata_filtering.py::test_metadata_filter_can_fallback_to_unfiltered_retrieval
+AssertionError: assert 'return_policy.md' == 'warranty_policy.md'
+```
+
+### Context
+- Command attempted: `python -m pytest tests\test_metadata_rules.py tests\test_metadata_filtering.py -q`
+- Query: `耳机保修多久？`
+- Filter used by the first test: `{"document_type": "return_policy"}`
+- Cause: the deterministic keyword fallback tokenizes Chinese text into single-character and bigram tokens. Even a semantically wrong document can match shared characters after the policy docs were expanded with metadata/example text.
+
+### Suggested Fix
+Use a nonexistent document type when testing "filtered search has no candidates", and separately test correct document-type filters for return/warranty/logistics precision.
+
+### Resolution
+Updated the empty-result and fallback tests to use `{"document_type": "nonexistent_policy"}`. Correct document-type precision remains covered by return-policy and warranty-policy filter tests.
+
+### Metadata
+- Reproducible: yes
+- Related Files: tests/test_metadata_filtering.py, app/pipeline/embedder.py
+
+---
+
 ## [ERR-20260604-006] docker_build_daemon_unavailable
 
 **Logged**: 2026-06-04T17:20:00+08:00

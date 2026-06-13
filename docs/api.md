@@ -60,7 +60,12 @@ Field meanings:
     {
       "source": "return_policy.md",
       "content": "签收后 7 天内，未拆封或不影响二次销售的商品可申请无理由退货。",
-      "score": 0.2459
+      "score": 0.2459,
+      "metadata": {
+        "document_type": "return_policy",
+        "policy_version": "ecommerce-policy-2026-06",
+        "applicable_scenario": "return_request"
+      }
     }
   ],
   "fallback": false,
@@ -80,6 +85,9 @@ Current field meanings:
 - `evidence[].source`: source document name.
 - `evidence[].content`: retrieved chunk text.
 - `evidence[].score`: retriever score for the evidence item.
+- `evidence[].metadata`: document or tool metadata. Week 2 Day 3 adds
+  `document_type`, `product_category`, `policy_version`, and
+  `applicable_scenario` for ecommerce policy documents.
 - `fallback`: whether the system refused to answer from insufficient evidence.
 - `fallback_reason`: explanation for fallback, or `null` when the answer is
   supported.
@@ -128,7 +136,8 @@ Example response shape:
     {
       "source": "structured:orders:ORD-1001",
       "content": "{\"order_id\":\"ORD-1001\",\"status\":\"delivered\"}",
-      "score": 1.0
+      "score": 1.0,
+      "metadata": {}
     }
   ],
   "fallback": false,

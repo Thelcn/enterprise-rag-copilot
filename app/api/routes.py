@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.core.config import get_settings
 from app.domains.ecommerce.adapter import (
+    get_ecommerce_metadata_filter,
     get_ecommerce_intent_router,
     get_ecommerce_tools,
     load_ecommerce_documents,
@@ -55,6 +56,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         session_id=request.session_id,
         intent=decision.intent,
         route=decision.route,
+        metadata_filter=get_ecommerce_metadata_filter(decision.intent),
     )
 
 
@@ -84,6 +86,7 @@ def _run_hybrid_chat(
         session_id=request.session_id,
         intent=decision.intent,
         route="hybrid",
+        metadata_filter=get_ecommerce_metadata_filter(decision.intent),
     )
     structured_evidence = [order_result.evidence] if order_result.evidence else []
     if document_response.fallback:

@@ -1,10 +1,17 @@
 from pathlib import Path
+from collections.abc import Callable
 from uuid import NAMESPACE_URL, uuid5
 
-from app.schemas.document import Document
+from app.schemas.document import Document, MetadataValue
 
 
-def load_markdown_documents(path: str | Path) -> list[Document]:
+MetadataProvider = Callable[[Path], dict[str, MetadataValue]]
+
+
+def load_markdown_documents(
+    path: str | Path,
+    metadata_provider: MetadataProvider | None = None,
+) -> list[Document]:
     root = Path(path)
     if not root.exists():
         raise FileNotFoundError(f"Document path does not exist: {root}")
@@ -22,17 +29,20 @@ def load_markdown_documents(path: str | Path) -> list[Document]:
     for file_path in markdown_files:
         content = file_path.read_text(encoding="utf-8").strip()
         relative_path = file_path.relative_to(base_dir).as_posix()
+        metadata = {
+            "source": file_path.name,
+            "path": relative_path,
+            "document_type": file_path.stem,
+            "file_extension": file_path.suffix.lower(),
+        }
+        if metadata_provider is not None:
+            metadata.update(metadata_provider(file_path))
         documents.append(
             Document(
                 id=_build_document_id(relative_path),
                 source=file_path.name,
                 content=content,
-                metadata={
-                    "source": file_path.name,
-                    "path": relative_path,
-                    "document_type": file_path.stem,
-                    "file_extension": file_path.suffix.lower(),
-                },
+                metadata=metadata,
             )
         )
 

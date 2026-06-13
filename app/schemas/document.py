@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-MetadataValue = str | int | float | bool | None
+MetadataValue = str | int | float | bool | None | list[str]
 
 # 定义文档和文本块的模型，包含id、来源、内容和附加信息等字段
 class Document(BaseModel):
